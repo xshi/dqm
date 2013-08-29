@@ -52,28 +52,30 @@ int main(int argc, char** argv) {
   // ---------------------------------------------------------
   
   TString clusters_file = data_dir + "/" + run_number + "-clusters.root";
-  TString tracks_file = data_dir + "/" + run_number + "-tracks.root";
-  //TString tracks_file = data_dir + "/" + run_number + "-tracks_noalign.root";
+  // TString tracks_file = data_dir + "/" + run_number + "-tracks.root";
   TString tracks_noalign_file = data_dir + "/" + run_number + "-tracks_noalign.root";
   
+
   TFile *f = new TFile(clusters_file);  
   
-  TFile *f2 = new TFile(tracks_file);
-  if (f2->IsZombie()) {
-    cout << "Error opening file: " << tracks_file << endl;
-    cout << "Using " << tracks_noalign_file << " instead. " << endl;
+  // TFile *f2 = new TFile(tracks_file);
+  TFile *f2 = TFile::Open(tracks_noalign_file);
 
-    f2->Close();
+//   if (f2->IsZombie()) {
+//     // cout << "Error opening file: " << tracks_file << endl;
+//     // cout << "Using " << tracks_noalign_file << " instead. " << endl;
 
-    TFile *f2_alt = new TFile(tracks_noalign_file);
-    if (f2_alt->IsZombie()) {  
-      cout << "Error opening file: " << tracks_noalign_file << endl;
-    }
+//     f2->Close();
 
-    f2 = f2_alt;
-    //f2_alt->Close();
+//     TFile *f2_alt = new TFile(tracks_noalign_file);
+//     if (f2_alt->IsZombie()) {  
+//       cout << "Error opening file: " << tracks_noalign_file << endl;
+//     }
 
-  }
+//     f2 = f2_alt;
+//     //f2_alt->Close();
+
+//   }
 
   // ---------------------------------------------------------
   // General Styles 
@@ -150,31 +152,36 @@ int main(int argc, char** argv) {
   // ---------------------------------------------------------
   // 2. Making on-tracks clusters page  
   // ---------------------------------------------------------
+  RootWPage* myPage2; 
 
-  string page_name2 = "on track cluster"; 
-  RootWPage* myPage2 = new RootWPage(page_name2); 
-  myPage2->setAddress("two.html");
+  if (f2) {
+    string page_name2 = "on track cluster"; 
+    // RootWPage* myPage2 = new RootWPage(page_name2); 
+    myPage2 = new RootWPage(page_name2); 
 
-  cout << "Processing: " << page_name2 << " ... \n" << flush;        
-  
-  //TFile *f2 = new TFile(tracks_file);
-  base_name = "MyEUTelTestFitter"; 
-
-  for (int n=0; n<max_number_of_detectors; n++) {
+    myPage2->setAddress("two.html");
+    
+    cout << "Processing: " << page_name2 << " ... \n" << flush;        
+    
+    //TFile *f2 = new TFile(tracks_file);
+    base_name = "MyEUTelTestFitter"; 
+    
+    for (int n=0; n<max_number_of_detectors; n++) {
       myContent = procOnTrackCluster(base_name, n, f2);
       if (myContent != 0) {
 	myPage2->addContent(myContent);
       }
+    }
   }
-  
-  //f2->Close();
 
   // ---------------------------------------------------------
   // 3. Making tracking page  
   // ---------------------------------------------------------
+  RootWPage* myPage3; 
 
+  if (f2) {
   string page_name3 = "tracking"; 
-  RootWPage* myPage3 = new RootWPage(page_name3); 
+  myPage3 = new RootWPage(page_name3); 
   myPage3->setAddress("three.html");
 
   cout << "Processing: " << page_name3 << " ... \n" << flush;        
@@ -188,15 +195,15 @@ int main(int argc, char** argv) {
 	myPage3->addContent(myContent);
       }
   }
-  
-  // f3->Close();
+  }
 
   // ---------------------------------------------------------
   // 4. Making Detectioin Efficiency page  
   // ---------------------------------------------------------
-
+  RootWPage* myPage4; 
+  if (f2) {
   string page_name4 = "efficiency"; 
-  RootWPage* myPage4 = new RootWPage(page_name4); 
+  myPage4 = new RootWPage(page_name4); 
   myPage4->setAddress("four.html");
 
   cout << "Processing: " << page_name4 << " ... \n" << flush;        
@@ -207,7 +214,7 @@ int main(int argc, char** argv) {
   myContent = procEfficiency(base_name, f2);
   myPage4->addContent(myContent);
   
-  // f4->Close();
+  }
 
   // ---------------------------------------------------------
   // 5. Making Check Data Integrity page  
@@ -215,7 +222,7 @@ int main(int argc, char** argv) {
 
   string page_name5 = "data integrity"; 
   RootWPage* myPage5 = new RootWPage(page_name5); 
-  myPage5->setAddress("five.html");
+  myPage5->setAddress("data_integrity.html");
 
   cout << "Processing: " << page_name5 << " ... \n" << flush;        
   RootWContent* myContent5 = new RootWContent("Data Integrity Check");
@@ -233,33 +240,20 @@ int main(int argc, char** argv) {
       myContent5->addParagraph(s);
     }
 
-
-
-  //  RootWItemCollection myCollection;
-
-  // RootWBinaryFile *myBinaryFile = new RootWBinaryFile("testFile.png", "A test binary file", "/tmp/testme.png");
-  // myCanvas->SaveAs("/tmp/testme.png");
-
-  // myCollection.addItem(myBinaryFile, "Abinaryfile");
-  // myContent.addItem(myBinaryFile, "Abinaryfile");
-
-//  vector<RootWItem*> itemV = myCollection.getOtherItems();
-//  for (vector<RootWItem*>::iterator it = itemV.begin(); 
-//       it!=itemV.end(); ++it) {
-//    myContent->addItem(*it);
-//  }
-//  // 
-  myPage5->addContent(myContent5);
-  
+  myPage5->addContent(myContent5 );
 
   // ---------------------------------------------------------
   // Adding all pages
   // ---------------------------------------------------------
 
   mySite->addPage(myPage);
-  mySite->addPage(myPage2);
-  mySite->addPage(myPage3);
-  mySite->addPage(myPage4);
+  
+  if (f2) {
+    mySite->addPage(myPage2);
+    mySite->addPage(myPage3);
+    mySite->addPage(myPage4);
+  }
+
   mySite->addPage(myPage5);
 
   std::string targetDirectory = string(getenv(TARGETDIRECTORY));
@@ -286,7 +280,9 @@ int main(int argc, char** argv) {
   mySite->makeSite(true);
        
   f->Close();
-  f2->Close();
+  
+  if (f2)
+    f2->Close();
 
   // if (f2_alt) f2_alt->Close();
 
