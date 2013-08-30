@@ -135,9 +135,11 @@ def eut_dqm(runs, force=False):
         touch_file(run, '.end_eut_dqm')
 
 
-def eut_ful(runs):
-    force = False
-    
+def eut_ful(runs, force=False):
+    new_runs = eut_ful_runs(runs)
+    print new_runs
+    sys.exit()
+
     if len(runs) == 0:
         new_runs = eut_ful_runs(datadir)    
         new_runs.sort()
@@ -177,8 +179,7 @@ def eut_ful(runs):
         touch_file(run, '.end_eut_ful')
     
 
-
-def pub_dqm(runs=[], fn=False, force=False):
+def pub_dqm(runs, force=False):
     new_runs = pub_dqm_runs(runs)
     if len(new_runs) == 1:
         force = True
@@ -205,19 +206,12 @@ def pub_dqm(runs=[], fn=False, force=False):
         touch_file(run, '.end_pub_dqm')
 
 
-def pub_ful(runs=[]):
+def pub_ful(runs, force=False):
     new_runs = pub_ful_runs(runs)
-
-    force = False 
-    if len(new_runs) == 0:
-        sys.stdout.write('[pub_ful] no new run to process. \n')
-        return
-
     if len(new_runs) == 1:
         force = True
 
     for run in new_runs:
-
         if not force and run_contains_file(run, '.begin_pub_ful'):
             continue
 
@@ -440,7 +434,10 @@ def eut_dqm_runs(runs):
     return new_runs
 
 
-def eut_ful_runs(datadir):
+def eut_ful_runs(runs):
+    if len(runs) == 1:
+        return get_range_from_str(runs[0])        
+
     new_runs = []
     for root, dirs, files in os.walk(datadir):
         if len(dirs) != 0:
@@ -450,7 +447,6 @@ def eut_ful_runs(datadir):
             continue
 
         run = root.split('/')[-1]
-
         if not run.isdigit():
             continue 
         
@@ -464,7 +460,8 @@ def eut_ful_runs(datadir):
             continue
 
         new_runs.append(run)
-                    
+
+    new_runs.sort()
     return new_runs
                 
                 
