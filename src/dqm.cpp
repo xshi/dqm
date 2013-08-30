@@ -219,34 +219,37 @@ int main(int argc, char** argv) {
   // ---------------------------------------------------------
   // 5. Making Check Data Integrity page  
   // ---------------------------------------------------------
+  string datafile = string(data_dir) + string("/") + 
+    string("check_data_integrity.txt");
 
-  string page_name5 = "data integrity"; 
-  RootWPage* myPage5 = new RootWPage(page_name5); 
-  myPage5->setAddress("data_integrity.html");
-
-  cout << "Processing: " << page_name5 << " ... \n" << flush;        
-  RootWContent* myContent5 = new RootWContent("Data Integrity Check");
-
-  ifstream infile;
-  TString datafile = data_dir + "/" + "check_data_integrity.txt";
-
-  infile.open(datafile); 
-
-  std::string s;
-  int nline = 0; 
-  while (std::getline(infile, s))
-    {
-      nline ++; 
-      myContent5->addParagraph(s);
-
-      if (nline > 100) {
-	myContent5->addParagraph("\n\nExceeding 100 lines limit!!!");
-	break; 
-      }
+  RootWPage* myPage5; 
+  bool f5 = boost::filesystem::exists( datafile ); 
+  if (f5) {
+      string page_name5 = "data integrity"; 
+      myPage5 = new RootWPage(page_name5); 
+      myPage5->setAddress("data_integrity.html");
+      
+      cout << "Processing: " << page_name5 << " ... \n" << flush;        
+      RootWContent* myContent5 = new RootWContent("Data Integrity Check");
+      
+      ifstream infile;
+      infile.open(datafile.c_str()); 
+      
+      std::string s;
+      int nline = 0; 
+      while (std::getline(infile, s))
+	{
+	  nline ++; 
+	  myContent5->addParagraph(s);
+	  
+	  if (nline > 100) {
+	    myContent5->addParagraph("\n\nExceeding 100 lines limit!!!");
+	    break; 
+	  }
+	}
+      
+      myPage5->addContent(myContent5 );
     }
-
-  myPage5->addContent(myContent5 );
-
   // ---------------------------------------------------------
   // Adding all pages
   // ---------------------------------------------------------
@@ -258,8 +261,10 @@ int main(int argc, char** argv) {
     mySite->addPage(myPage3);
     mySite->addPage(myPage4);
   }
-
-  mySite->addPage(myPage5);
+  
+  if (f5) {
+    mySite->addPage(myPage5);
+  }
 
   std::string targetDirectory = string(getenv(TARGETDIRECTORY));
   if (targetDirectory=="") {
