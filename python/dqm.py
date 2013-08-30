@@ -29,33 +29,7 @@ except ImportError:
 
 dataset = 'PSI2013'
 
-if dataset == '2012A':
-    begin_valid_run = 120
-    datadir = '/home/pixel_dev/TB2012Data/data/'
-    dbname = 'run_list.db'
-    dbpath = '/home/pixel_dev/TB2012Data'
-    daq_pc = 'cmspixel@heplnw044'
-    daqdir = '/data/'
-    
-elif dataset == '2012B':
-    daq_pc = 'pixel_dev@pcpixeltb'
-    daqdir = '/home/pixel_dev/data/2012B'
-    begin_valid_run = 15280
-
-    datadir = '/home/pixel_dev/TB2012B_Data/data'
-    dbname = 'run_list.db'
-    dbpath = '/home/pixel_dev/TB2012B_Data'
-
-elif dataset == 'Xray2013':
-    daq_pc = 'pixel_dev@pcpixeltb'
-    daqdir = '/home/pixel_dev/tmp'
-    begin_valid_run = 18001 
-
-    datadir = '/home/pixel_dev/Xray2013Data/data'
-    dbname = 'run_list.db'
-    dbpath = '/home/pixel_dev/Xray2013Data'
-
-elif dataset == 'PSI2013':
+if dataset == 'PSI2013':
     daq_pc = 'pixel_dev@pcpixeltb'
     daqdir = '/home/pixel_dev/PSI2013Data/incoming'
     begin_valid_run = 20001
@@ -64,9 +38,15 @@ elif dataset == 'PSI2013':
     datadir = '/home/pixel_dev/PSI2013Data/data'
     dbname = 'run_list.db'
     dbpath = '/home/pixel_dev/PSI2013Data'
-    
 else:
     raise NameError(dataset)
+
+
+def get_env_file(run):
+    env_file = '/home/pixel_dev/dqm/bash/dqm_env.sh'
+    if run_contains_file_pattern(run, 'TestBoard2'): 
+        env_file = '/home/pixel_dev/dqm/bash/dqm_env_v0.sh'
+    return env_file
 
 
 def main():
@@ -86,43 +66,6 @@ def update_db(args):
     db.close()
 
     check_update_status(dbfile)
-
-def cp_runs(fn=False):
-    dbfile = check_and_join(dbpath, dbname)
-    db = open(dbfile)
-    runs = json.load(db)
-    db.close()
-
-    local_runs = get_valid_runs()
-
-    remote_runs = runs.keys()
-    remote_runs.sort()
-
-    if not fn:
-        # Leave the last run not copy until finished. 
-        remote_runs = remote_runs[:-1]
-
-    new_runs = []
-    for run in remote_runs:
-        if run not in local_runs:
-            new_runs.append(run)
-
-
-    if len(new_runs) == 0:
-        sys.stdout.write('All runs are updated. \n')
-        return
-    
-    sys.stdout.write('Updating %s runs ... \n' %len(new_runs))
-    for run in new_runs:
-        sys.stdout.write('run %s ... ' % run)
-        sys.stdout.flush()
-        rundir = os.path.join(datadir, run)
-        check_and_join(rundir)
-
-        filename = runs[run]
-        cmd = "scp  %s:%s/%s %s/" %(daq_pc, daqdir, filename, rundir)
-        output = proc_cmd(cmd) 
-        sys.stdout.write(' OK.\n')
 
 
 def ln_runs(args):
@@ -160,16 +103,7 @@ def ln_runs(args):
 
 
 def eut_dqm(runs, force=False):
-    if len(runs) == 0:
-        new_runs = eut_dqm_runs(datadir)    
-        new_runs.sort()
-
-    elif len(runs) == 1:
-        new_runs = get_range_from_str(runs[0])        
-
-    else:
-        new_runs = runs
-
+    new_runs = eut_dqm_runs(runs)    
     if len(new_runs) == 1:
         force = True
     
@@ -184,7 +118,6 @@ def eut_dqm(runs, force=False):
         procenv = source_bash(env_file)
         procdir = procenv['simplesub']
 
-        #modes = ["fullconvert", "clustering", "hits", "tracks_noalign"]
         modes = ["fullconvert", "clustering", "hits"]        
 
         check_raw_file(procdir, run)
@@ -263,9 +196,7 @@ def pub_dqm(runs=[], fn=False, force=False):
     if len(new_runs) == 1:
         force = True
 
-    #sys.stdout.write('[pub_dqm] Updating %s runs ... \n' %len(new_runs))
     for run in new_runs:
-        
         if not force and run_contains_file(run, '.begin_pub_dqm'):
             continue
 
@@ -279,8 +210,6 @@ def pub_dqm(runs=[], fn=False, force=False):
  
         env_file = get_env_file(run)
         procenv = source_bash(env_file)
-        #procdir = procenv['simplesub']
-        #procdir = os.path.join(os.environ['simplesub'], 'CMSPixel')
         procdir = os.path.join(procenv['simplesub'], 'CMSPixel')
 
         touch_file(run, '.begin_pub_dqm')
@@ -300,7 +229,6 @@ def pub_ful(runs=[]):
     if len(new_runs) == 1:
         force = True
 
-    #sys.stdout.write('[pub_ful] Updating %s runs ... \n' %len(new_runs))
     for run in new_runs:
 
         if not force and run_contains_file(run, '.begin_pub_ful'):
@@ -316,9 +244,6 @@ def pub_ful(runs=[]):
 
         env_file = get_env_file(run)
         procenv = source_bash(env_file)
-        #procdir = procenv['simplesub']
-        #procdir = os.path.join(os.environ['simplesub'], 'CMSPixel')
-        
         procdir = os.path.join(procenv['simplesub'], 'CMSPixel')
 
         touch_file(run, '.begin_pub_ful')
@@ -368,27 +293,6 @@ def chk_dqm(runs):
     sys.stdout.write('--------------------------------------\n')
     sys.stdout.write('http://ntucms1.cern.ch/pixel_dev/dqm/ \n')
     sys.stdout.write('--------------------------------------\n')
-
-
-def fin_dqm():
-    update_db()
-    cp_runs(fn=True)
-    eut_dqm()
-    pub_dqm(runs=[], fn=True)
-
-
-def ana_dqm(args):
-    filename = args[0]
-    runs = get_runs_from_file(filename)
-    force_eut = False
-    force_pub = False
-    if '-feut' in args:
-        force_eut = True 
-    if '-fpub' in args:
-        force_pub = True 
-    for run in runs:
-        eut_dqm([run], force=force_eut)
-        pub_dqm([run], force=force_pub)
 
 
 def batch_touch(arg):
@@ -518,7 +422,10 @@ def check_update_status(f, verbose=1):
     return message
 
 
-def eut_dqm_runs(datadir):
+def eut_dqm_runs(runs):
+    if len(runs) == 1:
+        return get_range_from_str(runs[0])        
+
     new_runs = []
     for root, dirs, files in os.walk(datadir):
         if len(dirs) != 0: 
@@ -528,7 +435,6 @@ def eut_dqm_runs(datadir):
             continue 
 
         run = root.split('/')[-1]
-
         if not run.isdigit():
             continue 
 
@@ -543,6 +449,7 @@ def eut_dqm_runs(datadir):
         
         new_runs.append(run)
 
+    new_runs.sort()
     return new_runs
 
 
@@ -806,6 +713,7 @@ def get_range_from_str(val, start=0, stop=None):
         result.append(int(val))
 
     result = [ str(r).zfill(6) for r in result ]
+    result.sort()
     return result
 
 
@@ -837,14 +745,6 @@ def source_bash(f):
     return env 
 
 
-def get_env_file(run):
-    env_file = '/home/pixel_dev/scripts/dqm_env.sh'
-    if run_contains_file_pattern(run, 'TestBoard2'): 
-        env_file = '/home/pixel_dev/scripts/dqm_env_v0.sh'
-
-    return env_file
-
- 
 
 
 if __name__ == '__main__':
