@@ -22,10 +22,7 @@ COMPILERFLAGS+=-Werror
 COMP=g++ $(COMPILERFLAGS) $(INCLUDEFLAGS) $(DEFINES)
 
 
-bin: dqm dqm_xshi 
-	@echo "Executable dqm is built."
-
-all: hit tkgeometry exocom general elements ushers dressers viz naly squid testObjects tklayout dqm dqm_xshi
+all: dqm dqm_test
 	@echo "Full build successful."
 
 #ROOT-related stuff
@@ -38,10 +35,10 @@ $(BINDIR)/dqm: $(SRCDIR)/dqm.cpp $(LIBDIR)/rootweb.o
 	mkdir -p $(BINDIR)	
 	$(COMP) $(ROOTFLAGS) $(LIBDIR)/rootweb.o $(SRCDIR)/dqm.cpp $(ROOTLIBFLAGS) $(BOOSTLIBFLAGS) -o $(BINDIR)/dqm
 
-dqm_xshi: $(BINDIR)/dqm_xshi
-$(BINDIR)/dqm_xshi: $(SRCDIR)/dqm_xshi.cpp $(LIBDIR)/rootweb.o 
+dqm_test: $(BINDIR)/dqm_test
+$(BINDIR)/dqm_test: $(SRCDIR)/dqm_test.cpp $(LIBDIR)/rootweb.o 
 	mkdir -p $(BINDIR)	
-	$(COMP) $(ROOTFLAGS) $(LIBDIR)/rootweb.o $(SRCDIR)/dqm_xshi.cpp $(ROOTLIBFLAGS) $(BOOSTLIBFLAGS) -o $(BINDIR)/dqm_xshi
+	$(COMP) $(ROOTFLAGS) $(LIBDIR)/rootweb.o $(SRCDIR)/dqm_test.cpp $(ROOTLIBFLAGS) $(BOOSTLIBFLAGS) -o $(BINDIR)/dqm_test
 
 
 test: $(BINDIR)/test_web
@@ -51,4 +48,4 @@ $(BINDIR)/test_web: $(SRCDIR)/test.cpp $(LIBDIR)/rootweb.o
 
 #CLEANUP
 clean:
-	rm -f lib/rootweb.o bin/dqm 
+	rm -f lib/rootweb.o bin/dqm bin/dqm_test 
