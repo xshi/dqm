@@ -220,7 +220,8 @@ int main(int argc, char** argv) {
   // 5. Making Check Data Integrity page  
   // ---------------------------------------------------------
   string datafile = string(data_dir) + string("/") + 
-    string("check_data_integrity.txt");
+    // string("check_data_integrity.txt");
+    string("chk_dat.txt");
 
   RootWPage* myPage5; 
   bool f5 = boost::filesystem::exists( datafile ); 
