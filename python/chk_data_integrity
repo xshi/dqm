@@ -46,7 +46,6 @@ def main():
 
     decoder = Decoder.Decoder()
     decoder.setNumROCs(8)
-    decoder.setROCVersion(1)
 
     sys.stdout.write('[chk_data_integrity] Updating %s runs ... \n'
                      %len(new_runs))
@@ -56,6 +55,11 @@ def main():
 
         if run_contains_file(run, '.end_chk_data_integrity'):
             continue
+
+        if run_contains_file_pattern(run, 'TestBoard2'): 
+            decoder.setROCVersion(0)
+        else:
+            decoder.setROCVersion(1)
 
         sys.stdout.write('[chk_data_integrity] run %s ... ' % run)
         sys.stdout.flush()
@@ -151,6 +155,15 @@ def run_contains_file(run, f):
 
     return False
     
+
+def run_contains_file_pattern(run, pat):
+    rundir = os.path.join(datadir, run)
+    for root, dirs, files in os.walk(rundir):
+        for f in files:
+            if pat in f:
+                return True
+    return False
+
     
 if __name__ == '__main__':
     main()
