@@ -1,13 +1,13 @@
 #!/bin/sh
 
-#. /home/pixel_dev/scripts/dqm_env.sh
-
 /home/pixel_dev/dqm/python/dqm.py update_db
 /home/pixel_dev/dqm/python/dqm.py ln_runs 
 
+/home/pixel_dev/dqm/python/dqm.py chk_dat 
+
 /home/pixel_dev/dqm/python/dqm.py pub_dqm
 /home/pixel_dev/dqm/python/dqm.py pub_ful
-/home/pixel_dev/dqm/python/dqm.py pub_data_integrity 
+/home/pixel_dev/dqm/python/dqm.py pub_dat 
 
 if [ $(pgrep Marlin | wc -w) -lt 3 ]; then 
     /home/pixel_dev/dqm/python/dqm.py eut_dqm
