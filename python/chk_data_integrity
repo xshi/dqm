@@ -9,6 +9,8 @@ __author__ = "Xin Shi <Xin.Shi@cern.ch>"
 
 import sys
 import os 
+
+sys.path.append('/home/pixel_dev/cmspxltb/trunk/pycohal')
 import Decoder
 
 dataset = 'PSI2013'
@@ -16,7 +18,9 @@ dataset = 'PSI2013'
 if dataset == 'PSI2013':
     daq_pc = 'pixel_dev@pcpixeltb'
     daq_data = '/home/pixel_dev/PSI2013Data/incoming'
-    good_run_start = 20001  
+
+    begin_valid_run = 20001
+    end_valid_run = 50001 
 
     datadir = '/home/pixel_dev/PSI2013Data/data'
     dbname = 'run_list.db'
@@ -91,7 +95,7 @@ def chk_data_integrity_runs():
         if not run.isdigit():
             continue
         
-        if int(run) < good_run_start: # pass the bad runs.
+        if int(run) < begin_valid_run or int(run) > end_valid_run:
             continue
 
         if '.begin_chk_data_integrity' in files:
@@ -117,7 +121,6 @@ def get_range_from_str(val, start=0, stop=None):
         return range(start, stop)
 
     result = []
-
     if '-' in val and ',' not in val:
         result = get_range_hypen(val)
         
