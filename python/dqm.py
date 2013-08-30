@@ -26,6 +26,9 @@ try:
 except ImportError:
     import simplejson as json
 
+sys.path.append('/home/pixel_dev/cmspxltb/trunk/pycohal')
+from Decoder_dqm import Decoder 
+
 
 dataset = 'PSI2013'
 
@@ -42,11 +45,6 @@ else:
     raise NameError(dataset)
 
 
-def get_env_file(run):
-    env_file = '/home/pixel_dev/dqm/bash/dqm_env.sh'
-    if run_contains_file_pattern(run, 'TestBoard2'): 
-        env_file = '/home/pixel_dev/dqm/bash/dqm_env_v0.sh'
-    return env_file
 
 
 def main():
@@ -135,6 +133,34 @@ def eut_dqm(runs, force=False):
         touch_file(run, '.end_eut_dqm')
 
 
+def pub_dqm(runs, force=False):
+    new_runs = pub_dqm_runs(runs)
+    if len(new_runs) == 1:
+        force = True
+
+    for run in new_runs:
+        if not force and run_contains_file(run, '.begin_pub_dqm'):
+            continue
+
+        if not force and run_contains_file(run, '.end_pub_dqm'):
+            continue
+
+        sys.stdout.write('[pub_dqm] run %s ... ' % run)
+        sys.stdout.flush()
+        
+        cmd = 'dqm data/%s' %run
+ 
+        env_file = get_env_file(run)
+        procenv = source_bash(env_file)
+        procdir = os.path.join(procenv['simplesub'], 'CMSPixel')
+
+        touch_file(run, '.begin_pub_dqm')
+        output = proc_cmd(cmd, procdir=procdir, env=procenv)
+        sys.stdout.write(' OK.\n')
+        touch_file(run, '.end_pub_dqm')
+
+
+
 def eut_ful(runs, force=False):
     new_runs = eut_ful_runs(runs)
     if len(new_runs) == 1:
@@ -166,31 +192,6 @@ def eut_ful(runs, force=False):
         touch_file(run, '.end_eut_ful')
 
 
-def pub_dqm(runs, force=False):
-    new_runs = pub_dqm_runs(runs)
-    if len(new_runs) == 1:
-        force = True
-
-    for run in new_runs:
-        if not force and run_contains_file(run, '.begin_pub_dqm'):
-            continue
-
-        if not force and run_contains_file(run, '.end_pub_dqm'):
-            continue
-
-        sys.stdout.write('[pub_dqm] run %s ... ' % run)
-        sys.stdout.flush()
-        
-        cmd = 'dqm data/%s' %run
- 
-        env_file = get_env_file(run)
-        procenv = source_bash(env_file)
-        procdir = os.path.join(procenv['simplesub'], 'CMSPixel')
-
-        touch_file(run, '.begin_pub_dqm')
-        output = proc_cmd(cmd, procdir=procdir, env=procenv)
-        sys.stdout.write(' OK.\n')
-        touch_file(run, '.end_pub_dqm')
 
 
 def pub_ful(runs, force=False):
@@ -219,19 +220,57 @@ def pub_ful(runs, force=False):
         sys.stdout.write(' OK.\n')
         touch_file(run, '.end_pub_ful')
 
-def pub_data_integrity(runs, force=False):
-    new_runs = pub_data_integrity_runs(runs)
+
+def chk_dat(runs, force=False): 
+    new_runs = chk_dat_runs(runs) 
+
+    if len(new_runs) == 1:
+        force = True
+
+    decoder = Decoder()
+    decoder.setNumROCs(8)
+
+    for run in new_runs:
+        if not force and ( run_contains_file(run, '.begin_chk_dat') or 
+                           run_contains_file(run, '.end_chk_dat') ):
+            continue
+
+        if run_contains_file_pattern(run, 'TestBoard2'): 
+            decoder.setROCVersion(0)
+        else:
+            decoder.setROCVersion(1)
+
+        sys.stdout.write('[chk_dat] run %s ... ' % run)
+        sys.stdout.flush()
+
+        filename = os.path.join(datadir, run, 'mtb.bin')
+        outfile = os.path.join(datadir, run, 'chk_dat.txt')
+        orig_stdout = sys.stdout
+        f = file(outfile, 'w')
+        sys.stdout = f
+        
+        touch_file(run, '.begin_chk_dat')
+        try:
+            decoder.checkDataIntegrity(filename, 1, 5000)
+        except IOError:
+            pass 
+        sys.stdout = orig_stdout
+        f.close()
+        sys.stdout.write(' OK.\n')
+        touch_file(run, '.end_chk_dat')
+
+
+def pub_dat(runs, force=False):
+    new_runs = pub_dat_runs(runs)
     if len(new_runs) == 1:
         force = True
 
     for run in new_runs:
-        if not force and run_contains_file(run, '.begin_pub_data_integrity'):
-            continue
-
-        if not force and run_contains_file(run, '.end_pub_data_integrity'):
+        if not force and ( run_contains_file(run, '.begin_pub_dat') or 
+                           run_contains_file(run, '.end_pub_dat') ):
             continue
         
-        sys.stdout.write('[pub_data_integrity] run %s ... ' % run)
+        sys.stdout.write('[pub_dat] run %s ... ' % run)
         sys.stdout.flush()
         
         cmd = 'dqm data/%s' %run
@@ -240,27 +279,38 @@ def pub_data_integrity(runs, force=False):
         procenv = source_bash(env_file)
         procdir = os.path.join(procenv['simplesub'], 'CMSPixel')
 
-        touch_file(run, '.begin_pub_data_integrity')
+        touch_file(run, '.begin_pub_dat')
         output = proc_cmd(cmd, procdir=procdir, env=procenv)
         sys.stdout.write(' OK.\n')
-        touch_file(run, '.end_pub_data_integrity')
+        touch_file(run, '.end_pub_dat')
 
 
-def chk_dqm(runs):
-    sys.stdout.write('Checking for runs: '+ ', '.join(runs) +'...\n')
-    runs = [r.zfill(6) for r in runs]
+def status(args):
+    if len(args) == 0:
+        runs = get_valid_runs()
+    elif len(args) == 1:
+        runs = get_range_from_str(args[0])
+    else:
+        runs = args
+    
 
-    update_db()
-    cp_runs()
-    eut_dqm(runs)
+    for run in runs:
+        status = ''
+        if run_contains_file(run, '.end_eut_dqm'):
+            status += 'eut_dqm'
 
-    pub_dqm(runs, force=True)
+        if run_contains_file(run, '.end_eut_ful'):
+            status += ' eut_ful'
+            
+        if run_contains_file(run, '.end_chk_dat'):
+            status += ' chk_dat'
 
-    sys.stdout.write('\nPlease check the webpage for runs: '+ ', '.join(runs)+'\n')
-    sys.stdout.write('--------------------------------------\n')
-    sys.stdout.write('http://ntucms1.cern.ch/pixel_dev/dqm/ \n')
-    sys.stdout.write('--------------------------------------\n')
+        if run_contains_file(run, '.end_chk_data_integrity'):
+            status += ' chk_dat_ful'
 
+        sys.stdout.write(' %s : %s \n' % (run, status))
+        sys.stdout.flush()
+ 
 
 def batch_touch(arg):
     fname = arg[0]
@@ -460,7 +510,6 @@ def pub_dqm_runs(runs):
 
 
 def pub_ful_runs(runs):
-
     if len(runs) == 1:
         return get_range_from_str(runs[0])        
 
@@ -488,7 +537,36 @@ def pub_ful_runs(runs):
 
     return new_runs
 
-def pub_data_integrity_runs(runs):
+
+def chk_dat_runs(runs):
+    if len(runs) == 1:
+        return get_range_from_str(runs[0])        
+
+    new_runs = []
+    for root, dirs, files in os.walk(datadir):
+        if len(dirs) != 0 or len(files) == 0: 
+            continue 
+
+        run = root.split('/')[-1]
+        if not run.isdigit():
+            continue
+        
+        if int(run) < begin_valid_run or int(run) > end_valid_run:
+            continue
+
+        if '.begin_chk_dat' in files:
+            continue
+
+        if '.end_chk_dat' in files:
+            continue
+       
+        new_runs.append(run)
+
+    new_runs.sort()
+    return new_runs
+
+
+def pub_dat_runs(runs):
     if len(runs) == 1:
         return get_range_from_str(runs[0])        
 
@@ -506,10 +584,10 @@ def pub_data_integrity_runs(runs):
         if int(run) < begin_valid_run or int(run) > end_valid_run:
             continue
              
-        if '.end_chk_data_integrity' not in files:
+        if '.end_chk_dat' not in files:
             continue
         
-        if '.end_pub_data_integrity' in files:
+        if '.end_pub_dat' in files:
             continue
 
         new_runs.append(run)
@@ -587,7 +665,7 @@ def is_stable_file(filename):
     then = strptime(then, "%a %b %d %H:%M:%S %Y")
     now = datetime.now()
     tdelta = now - then
-    min_tdelta = timedelta(minutes=2)
+    min_tdelta = timedelta(minutes=1)
     return tdelta > min_tdelta
 
 
@@ -626,9 +704,7 @@ def get_files_from_ls(output, good_files_start):
             continue
         
         timestr = '__'.join(items).replace('.dat', '')
-        print time.strptime(timestr, "_%Y_%m_%d__%Hh%Mm%Ss")
-        
-        sys.exit()
+        time.strptime(timestr, "_%Y_%m_%d__%Hh%Mm%Ss")
         files.append(filename)
 
     return files 
@@ -646,7 +722,6 @@ def get_range_from_str(val, start=0, stop=None):
         return range(start, stop)
 
     result = []
-
     if '-' in val and ',' not in val:
         result = get_range_hypen(val)
         
@@ -691,6 +766,13 @@ def source_bash(f):
     output = pipe.communicate()[0]
     env = dict((line.split("=", 1) for line in output.splitlines()))
     return env 
+
+
+def get_env_file(run):
+    env_file = '/home/pixel_dev/dqm/bash/dqm_env.sh'
+    if run_contains_file_pattern(run, 'TestBoard2'): 
+        env_file = '/home/pixel_dev/dqm/bash/dqm_env_v0.sh'
+    return env_file
 
 
 if __name__ == '__main__':
