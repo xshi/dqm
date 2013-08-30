@@ -179,20 +179,7 @@ def eut_ful(runs):
 
 
 def pub_dqm(runs=[], fn=False, force=False):
-    if len(runs) == 0:
-        new_runs = pub_dqm_runs(runs, fn=fn, force=force)
-        new_runs.sort()
-
-    elif len(runs) == 1:
-        new_runs = get_range_from_str(runs[0])        
-
-    else:
-        new_runs = runs
-    
-    if len(new_runs) == 0:
-        sys.stdout.write('[pub_dqm] no new run to process. \n')
-        return
-
+    new_runs = pub_dqm_runs(runs)
     if len(new_runs) == 1:
         force = True
 
@@ -482,7 +469,7 @@ def eut_ful_runs(datadir):
                 
                 
                 
-def pub_dqm_runs(runs, fn=False, force=False):
+def pub_dqm_runs(runs):
     if len(runs) == 1:
         return get_range_from_str(runs[0])        
 
@@ -508,6 +495,8 @@ def pub_dqm_runs(runs, fn=False, force=False):
             continue
 
         new_runs.append(run)
+
+    new_runs.sort()
     return new_runs
 
 
