@@ -352,7 +352,7 @@ def check_and_join(filepath, filename=None):
     return file_
 
 
-def proc_cmd(cmd, test=False, verbose=1, procdir=None, env=None):
+def proc_cmd(cmd, test=False, verbose=1, procdir=None, env=os.environ):
     if test:
         sys.stdout.write(cmd+'\n')
         return 
@@ -361,11 +361,7 @@ def proc_cmd(cmd, test=False, verbose=1, procdir=None, env=None):
     if procdir != None:
         os.chdir(procdir)
 
-    if env is None:
-        env = os.environ()
-
-    process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE,
-                               env=env)
+    process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, env=env)
     process.wait()
     stdout = process.communicate()[0]
     if 'error' in stdout:
