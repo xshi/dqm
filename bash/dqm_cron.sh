@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# crontab -e 
+# * * * * * /home/pixel_dev/dqm/bash/dqm_cron.sh
+
 /home/pixel_dev/dqm/python/dqm.py update_db
 /home/pixel_dev/dqm/python/dqm.py ln_runs 
 
