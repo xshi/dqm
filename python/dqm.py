@@ -137,17 +137,6 @@ def eut_dqm(runs, force=False):
 
 def eut_ful(runs, force=False):
     new_runs = eut_ful_runs(runs)
-    print new_runs
-    sys.exit()
-
-    if len(runs) == 0:
-        new_runs = eut_ful_runs(datadir)    
-        new_runs.sort()
-    elif len(runs) == 1:
-        new_runs = get_range_from_str(runs[0])        
-    else:
-        new_runs = runs
-
     if len(new_runs) == 1:
         force = True
 
@@ -170,14 +159,12 @@ def eut_ful(runs, force=False):
         for mode in modes:
             sys.stdout.write('[eut_ful] %s run %s ... ' %  (mode, run))
             sys.stdout.flush()
-            
             cmd = 'python config-cmspixel.py -a %s %s ' % (mode, run)
             output = proc_cmd(cmd, procdir=procdir, env=procenv)
-            
             sys.stdout.write('OK.\n')
 
         touch_file(run, '.end_eut_ful')
-    
+
 
 def pub_dqm(runs, force=False):
     new_runs = pub_dqm_runs(runs)
