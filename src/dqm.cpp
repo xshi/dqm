@@ -227,17 +227,22 @@ int main(int argc, char** argv) {
   cout << "Processing: " << page_name5 << " ... \n" << flush;        
   RootWContent* myContent5 = new RootWContent("Data Integrity Check");
 
-  // RootWTextFile* myTextFile = new RootWTextFile("test.txt");
-  // myTextFile->setDescription("File link");
   ifstream infile;
   TString datafile = data_dir + "/" + "check_data_integrity.txt";
 
   infile.open(datafile); 
 
   std::string s;
+  int nline = 0; 
   while (std::getline(infile, s))
     {
+      nline ++; 
       myContent5->addParagraph(s);
+
+      if (nline > 100) {
+	myContent5->addParagraph("\n\nExceeding 100 lines limit!!!");
+	break; 
+      }
     }
 
   myPage5->addContent(myContent5 );
