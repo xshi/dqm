@@ -1,0 +1,155 @@
+#!/usr/bin/python
+"""
+Script to check data integrity
+
+"""
+
+__author__ = "Xin Shi <Xin.Shi@cern.ch>"
+
+
+import sys
+import os 
+import Decoder
+
+dataset = 'PSI2013'
+
+if dataset == 'PSI2013':
+    daq_pc = 'pixel_dev@pcpixeltb'
+    daq_data = '/home/pixel_dev/PSI2013Data/incoming'
+    good_run_start = 20001  
+
+    datadir = '/home/pixel_dev/PSI2013Data/data'
+    dbname = 'run_list.db'
+    dbpath = '/home/pixel_dev/PSI2013Data'
+    
+else:
+    raise NameError(dataset)
+
+
+def main():
+    runs = sys.argv[1:]
+    if len(runs) == 0:
+        new_runs = chk_data_integrity_runs() 
+        new_runs.sort()
+    elif len(runs) == 1:
+        new_runs = get_range_from_str(runs[0])        
+    else:
+        new_runs = runs
+
+    if len(new_runs) == 0:
+        sys.stdout.write('[ck_data_integrity] no new run to process. \n')
+        return
+
+    decoder = Decoder.Decoder()
+    decoder.setNumROCs(8)
+    decoder.setROCVersion(1)
+
+    sys.stdout.write('[chk_data_integrity] Updating %s runs ... \n'
+                     %len(new_runs))
+    for run in new_runs:
+        if run_contains_file(run, '.begin_chk_data_integrity'):
+            continue
+
+        if run_contains_file(run, '.end_chk_data_integrity'):
+            continue
+
+        sys.stdout.write('[chk_data_integrity] run %s ... ' % run)
+        sys.stdout.flush()
+
+        filename = os.path.join(datadir, run, 'mtb.bin')
+
+        outfile = os.path.join(datadir, run, 'check_data_integrity.txt')
+
+        orig_stdout = sys.stdout
+        f = file(outfile, 'w')
+        sys.stdout = f
+        
+        touch_file(run, '.begin_chk_data_integrity')
+
+        try:
+            decoder.checkDataIntegrity(filename, 1)
+        except IOError:
+            pass 
+        
+        sys.stdout = orig_stdout
+
+        f.close()
+        sys.stdout.write(' OK.\n')
+        touch_file(run, '.end_chk_data_integrity')
+
+
+def chk_data_integrity_runs():
+    new_runs = []
+    for root, dirs, files in os.walk(datadir):
+        if len(dirs) != 0: 
+            continue # bypass single files in the datadir  
+        
+        if len(files) == 0: #bypass the empty runs or single file
+            continue 
+
+        run = root.split('/')[-1]
+        if not run.isdigit():
+            continue
+        
+        if int(run) < good_run_start: # pass the bad runs.
+            continue
+
+        if '.begin_chk_data_integrity' in files:
+            continue
+
+        if '.end_chk_data_integrity' in files:
+            continue
+       
+        new_runs.append(run)
+
+    return new_runs
+
+
+def get_range_from_str(val, start=0, stop=None):
+    if val == 'all' :
+        return val
+
+    def get_range_hypen(val):
+        start = int(val.split('-')[0])
+        tmp_stop = val.split('-')[1]
+        if tmp_stop != '':
+            stop = int(val.split('-')[1])+1
+        return range(start, stop)
+
+    result = []
+
+    if '-' in val and ',' not in val:
+        result = get_range_hypen(val)
+        
+    elif ',' in val:
+        items = val.split(',')
+        for item in items:
+            if '-' in item:
+                result.extend(get_range_hypen(item))
+            else:
+                result.append(int(item))
+    else:
+        result.append(int(val))
+
+    result = [ str(r).zfill(6) for r in result ]
+    return result
+
+
+def touch_file(run, fname): 
+    f = os.path.join(datadir, run, fname)
+    open(f, 'a').close()
+
+
+def run_contains_file(run, f):
+    rundir = os.path.join(datadir, run)
+    for root, dirs, files in os.walk(rundir):
+        if f in files:
+            return True
+
+    return False
+    
+    
+if __name__ == '__main__':
+    main()
+
+
