@@ -282,48 +282,28 @@ def batch_touch(arg):
 
 
 def batch_rm(arg):
+    if len(arg) < 2:
+        sys.stdout.write('Please give the run range! \n')
+        sys.exit()
+
     fname = arg[0]
     runs = arg[1:]
-    
-    if len(runs) == 0:
-        new_runs = find_runs_contain(fname) 
-        new_runs.sort()
-    elif len(runs) == 1:
+
+    if len(runs) == 1:
         new_runs = get_range_from_str(runs[0])        
     else:
         new_runs = runs
 
     for run in new_runs:
-        sys.stdout.write('[clean file] run %s, %s ... ' % (run, fname))
+        sys.stdout.write('[rm file] run %s, %s ... ' % (run, fname))
         sys.stdout.flush()
         
         file_ = os.path.join(datadir, run, fname)
-        os.remove(file_)
-        sys.stdout.write(' OK.\n')        
-
-
-def batch_mv(arg):
-    fname = arg[0]
-    pubdir = os.environ['TARGETDIRECTORY']
-    runs = arg[1:]
-    
-    if len(runs) == 0:
-        new_runs = find_runs_contain(fname) 
-        new_runs.sort()
-    elif len(runs) == 1:
-        new_runs = get_range_from_str(runs[0])        
-    else:
-        new_runs = runs
-
-    for run in new_runs:
-        sys.stdout.write('[mv file] run %s, %s ... ' % (run, fname))
-        sys.stdout.flush()
-
-        src = os.path.join(datadir, run, fname)
-        dst = os.path.join(pubdir, 'data_'+run, fname)
-        shutil.move(src, dst)
-
-        sys.stdout.write(' OK.\n')        
+        if os.path.exists(file_):
+            os.remove(file_)
+            sys.stdout.write(' OK.\n')        
+        else:
+            sys.stdout.write(' already removed.\n')        
 
 
 # ------------------------------------------------------------
@@ -711,8 +691,6 @@ def source_bash(f):
     output = pipe.communicate()[0]
     env = dict((line.split("=", 1) for line in output.splitlines()))
     return env 
-
-
 
 
 if __name__ == '__main__':
