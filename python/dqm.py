@@ -219,12 +219,8 @@ def pub_ful(runs, force=False):
         sys.stdout.write(' OK.\n')
         touch_file(run, '.end_pub_ful')
 
-def pub_data_integrity(runs=[]):
+def pub_data_integrity(runs, force=False):
     new_runs = pub_data_integrity_runs(runs)
-    force = False 
-    if len(new_runs) == 0:
-        return
-
     if len(new_runs) == 1:
         force = True
 
@@ -239,10 +235,13 @@ def pub_data_integrity(runs=[]):
         sys.stdout.flush()
         
         cmd = 'dqm data/%s' %run
-        procdir = os.path.join(os.environ['simplesub'], 'CMSPixel')
+
+        env_file = get_env_file(run)
+        procenv = source_bash(env_file)
+        procdir = os.path.join(procenv['simplesub'], 'CMSPixel')
 
         touch_file(run, '.begin_pub_data_integrity')
-        output = proc_cmd(cmd, procdir=procdir)
+        output = proc_cmd(cmd, procdir=procdir, env=procenv)
         sys.stdout.write(' OK.\n')
         touch_file(run, '.end_pub_data_integrity')
 
