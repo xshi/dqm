@@ -47,8 +47,12 @@ else:
 
 def main():
     args = sys.argv[1:]
-    if len(args) == 0:
+    if len(args) == 0 :
         return default(args)
+
+    if ( len(args) == 1 and 
+         is_valid_run_str(args[0]) ):
+        return rerun(args)
 
     function = getattr(dqm, args[0])
     return function(args[1:])
@@ -63,7 +67,7 @@ def default(args):
     
     for action in actions:
         function = getattr(dqm, action)
-        function(args[1:])
+        function(args)
 
 
 def rerun(args):
@@ -71,9 +75,12 @@ def rerun(args):
         sys.stdout.write('Please indicate run range!\n')
         sys.exit()
 
-    eut_dqm(args)
-    chk_dat(args)
-    pub_dqm(args)
+    runs = get_range_from_str(args[0])
+
+    for run in runs:
+        eut_dqm([run])
+        chk_dat([run])
+        pub_dqm([run])
 
     
 def update_db(args):
@@ -105,11 +112,11 @@ def ln_runs(args):
         if run not in local_runs:
             new_runs.append(run)
 
-    if len(new_runs) == 0:
-        sys.stdout.write('All runs are updated. \n')
-        return
+    # if len(new_runs) == 0:
+    #     sys.stdout.write('All runs are updated. \n')
+    #     return
     
-    sys.stdout.write('Updating %s runs ... \n' %len(new_runs))
+    #sys.stdout.write('Updating %s runs ... \n' %len(new_runs))
     for run in new_runs:
         sys.stdout.write('run %s ... ' % run)
         sys.stdout.flush()
@@ -589,10 +596,16 @@ def get_files_from_ls(output, good_files_start):
 
     return files 
 
+def is_valid_run_str(val):
+    if val.isdigit(): 
+        return True
+    if ',' in val or '-' in val:
+        return True
+    
+    return False 
+
 
 def get_range_from_str(val, start=0, stop=None):
-    if val == 'all' :
-        return val
 
     def get_range_hypen(val):
         start = int(val.split('-')[0])
