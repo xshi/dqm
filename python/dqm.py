@@ -228,22 +228,35 @@ def status(args):
     else:
         runs = args
 
-    fnames = ['.end_eut_dqm', 
-              '.end_chk_dat', 
-              '.end_eut_ful', 
-              '.end_chk_data_integrity', 
-              ]
+    tags = ['eut_dqm', 'chk_dat', 'eut_ful', 'chk_data_integrity']
 
+    begin_runs = []
+    end_runs = []
     for run in runs:
         status = ''
-        for fname in fnames: 
-            if run_contains_file(run, fname):
-                status += ' %s ' % fname.replace('.end_', '')
+        for tag in tags: 
+            if ( run_contains_file(run, '.begin_%s' %tag) and 
+                 not run_contains_file(run, '.end_%s' %tag) ):
+                status += ' %s (...) ' % tag
+            elif ( run_contains_file(run, '.begin_%s' %tag) and 
+                 run_contains_file(run, '.end_%s' %tag)) :
+                status += ' %s ' % tag 
+            elif ( not run_contains_file(run, '.begin_%s' %tag) and 
+                 run_contains_file(run, '.end_%s' %tag) ):
+                status += ' %s (!?) ' % tag 
             else:
                 status += '       '
 
         sys.stdout.write(' %s : %s \n' % (run, status))
         sys.stdout.flush()
+
+        if '(...)' in status: 
+            begin_runs.append(run)
+        if '(!?)' in status:
+            end_runs.append(run)
+
+    print 'Begin runs: \n', ','.join(begin_runs)
+    print 'End runs:\n', ','.join(end_runs)
  
 
 def reset(args):
@@ -261,7 +274,22 @@ def reset(args):
               ]
 
     for fname in fnames: 
-        print fname
+        batch_rm([fname, runs])
+
+
+def reset_ful(args):
+    if len(args) != 1 : 
+        sys.stdout.write('Please give the run range! \n')
+        sys.exit()
+        
+    runs = args[0]
+    fnames = ['.begin_eut_ful', 
+              '.end_eut_ful', 
+              '.begin_pub_ful', 
+              '.end_pub_ful', 
+              ]
+
+    for fname in fnames: 
         batch_rm([fname, runs])
 
 
@@ -345,7 +373,8 @@ def proc_cmd(cmd, test=False, verbose=1, procdir=None, env=os.environ):
     if procdir != None:
         os.chdir(procdir)
 
-    process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, env=env)
+    process = subprocess.Popen(cmd.split(), 
+                               stdout=subprocess.PIPE, env=env)
     process.wait()
     stdout = process.communicate()[0]
     if 'error' in stdout:
