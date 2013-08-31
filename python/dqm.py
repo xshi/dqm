@@ -47,9 +47,35 @@ else:
 
 def main():
     args = sys.argv[1:]
+    if len(args) == 0:
+        return default(args)
+
     function = getattr(dqm, args[0])
     return function(args[1:])
 
+
+def default(args):
+    actions = ['update_db', 
+               'ln_runs', 
+               'eut_dqm',
+               'chk_dat',
+               'pub_dqm']
+    
+    for action in actions:
+        function = getattr(dqm, action)
+        function(args[1:])
+
+
+def rerun(args):
+    if len(args) != 1:
+        sys.stdout.write('Please indicate run range!\n')
+        sys.exit()
+
+    eut_dqm(args)
+    chk_dat(args)
+    pub_dqm(args)
+
+    
 def update_db(args):
     cmd = 'ls %s' % daqdir
 
@@ -181,7 +207,9 @@ def pub_dqm(runs, force=False):
     for run in new_runs:
         if not force and ( run_contains_file(run, '.begin_pub_dqm') or
                            run_contains_file(run, '.end_pub_dqm') or 
-                           not run_contains_file(run, '.end_chk_dat') ):
+                           not run_contains_file(run, '.end_eut_dqm') or
+                           not run_contains_file(run, '.end_chk_dat')
+        ):
             continue
         
         sys.stdout.write('[pub_dqm] run %s ... ' % run)
