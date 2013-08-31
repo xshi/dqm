@@ -384,7 +384,7 @@ def proc_cmd(cmd, test=False, verbose=1, procdir=None, env=os.environ):
     return stdout
 
 
-def check_update_status(f, verbose=1):
+def check_update_status(f, verbose=0):
     tmpfile = make_tmpfile(f)
     if not os.access(tmpfile, os.F_OK):
         message = 'created %s ...\n' %f
