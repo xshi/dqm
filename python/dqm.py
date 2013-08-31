@@ -247,13 +247,19 @@ def status(args):
         status = ''
         if run_contains_file(run, '.end_eut_dqm'):
             status += 'eut_dqm'
+        else:
+            status += '       '
+
+        if run_contains_file(run, '.end_chk_dat'):
+            status += ' chk_dat'
+        else:
+            status += '       '
 
         if run_contains_file(run, '.end_eut_ful'):
             status += ' eut_ful'
-            
-        if run_contains_file(run, '.end_chk_dat'):
-            status += ' chk_dat'
-
+        else:
+            status += '       '
+           
         if run_contains_file(run, '.end_chk_data_integrity'):
             status += ' chk_dat_ful'
 
