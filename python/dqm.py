@@ -68,10 +68,14 @@ def default(arg=None):
     else:
         runs = get_range_from_str(arg)
 
+    force = False 
+    if len(runs) == 1: 
+        force = True 
+
     for run in runs:
-       eut_dqm(run)
-       chk_dat(run)
-       pub_dqm(run)
+       eut_dqm(run, force=force)
+       chk_dat(run, force=force)
+       pub_dqm(run, force=force)
        
     
 def update_db():
@@ -103,11 +107,6 @@ def ln_runs():
         if run not in local_runs:
             new_runs.append(run)
 
-    # if len(new_runs) == 0:
-    #     sys.stdout.write('All runs are updated. \n')
-    #     return
-    
-    #sys.stdout.write('Updating %s runs ... \n' %len(new_runs))
     for run in new_runs:
         sys.stdout.write('run %s ... ' % run)
         sys.stdout.flush()
@@ -123,24 +122,29 @@ def ln_runs():
 
 
 def eut_dqm(run, force=False):
-    #new_runs = eut_dqm_runs(runs)    
-    #if len(new_runs) == 1:
-    #    force = True
+    if force and ( run_contains_file(run, '.begin_eut_ful') or 
+                   run_contains_file(run, '.end_eut_ful') ) :
+        
+        s = raw_input(' !!! This will cause the eut ful process !!! \n\
+        Do you really want to proceed? (yes or no) ')
+        if s != 'yes':
+            return
+
     if nun_of_process('Marlin') > MAX_MARLIN_JOBS:
         sys.stdout.write(
             'Number of running Marlin jobs is larger than %s !\n'
             % MAX_MARLIN_JOBS)
         return
 
-    #for run in new_runs:
     if not force and run_contains_file(run, '.begin_eut_dqm'):
         return
         
     if not force and run_contains_file(run, '.end_eut_dqm'):
         return
 
-    if run_contains_file(run, '.end_eut_ful'):
-        return 
+    if not force and run_contains_file(run, '.end_eut_ful'):
+        return
+ 
 
     env_file = get_env_file(run)
     procenv = source_bash(env_file)
@@ -165,6 +169,7 @@ def eut_dqm(run, force=False):
 def chk_dat(run, force=False): 
     decoder = Decoder()
     decoder.setNumROCs(8)
+
     if not force and ( run_contains_file(run, '.begin_chk_dat') or 
                        run_contains_file(run, '.end_chk_dat') ):
         return
@@ -223,29 +228,42 @@ def status(args):
     else:
         runs = args
 
+    fnames = ['.end_eut_dqm', 
+              '.end_chk_dat', 
+              '.end_eut_ful', 
+              '.end_chk_data_integrity', 
+              ]
+
     for run in runs:
         status = ''
-        if run_contains_file(run, '.end_eut_dqm'):
-            status += 'eut_dqm'
-        else:
-            status += '       '
-
-        if run_contains_file(run, '.end_chk_dat'):
-            status += ' chk_dat'
-        else:
-            status += '       '
-
-        if run_contains_file(run, '.end_eut_ful'):
-            status += ' eut_ful'
-        else:
-            status += '       '
-           
-        if run_contains_file(run, '.end_chk_data_integrity'):
-            status += ' chk_dat_ful'
+        for fname in fnames: 
+            if run_contains_file(run, fname):
+                status += ' %s ' % fname.replace('.end_', '')
+            else:
+                status += '       '
 
         sys.stdout.write(' %s : %s \n' % (run, status))
         sys.stdout.flush()
  
+
+def reset(args):
+    if len(args) != 1 : 
+        sys.stdout.write('Please give the run range! \n')
+        sys.exit()
+        
+    runs = args[0]
+    fnames = ['.begin_eut_dqm', 
+              '.end_eut_dqm', 
+              '.begin_chk_dat', 
+              '.end_chk_dat', 
+              '.begin_pub_dqm', 
+              '.end_pub_dqm', 
+              ]
+
+    for fname in fnames: 
+        print fname
+        batch_rm([fname, runs])
+
 
 def batch_touch(arg):
     fname = arg[0]
@@ -384,24 +402,18 @@ def get_valid_runs():
 def get_valid_new_runs():
     runs = get_valid_runs()
     new_runs = []
+
+    fnames = [ '.begin_eut_dqm', '.end_eut_dqm', 
+               '.begin_chk_dat', '.end_chk_dat', 
+               '.begin_pub_dqm', '.end_pub_dqm', 
+               '.begin_eut_ful', '.end_eut_ful', 
+               '.begin_pub_ful', '.end_pub_ful', 
+               ]
+
     for run in runs:
-        if run_contains_file(run, '.begin_eut_dqm'):
-            continue
-
-        if run_contains_file(run, '.end_eut_dqm'):
-            continue
-
-        if run_contains_file(run, '.begin_chk_dat'):
-            continue
-
-        if run_contains_file(run, '.end_chk_dat'):
-            continue
-
-        if run_contains_file(run, '.begin_eut_ful'):
-            continue
-
-        if run_contains_file(run, '.end_eut_ful'):
-            continue
+        for fname in fnames:
+            if run_contains_file(run, fname):
+                continue
 
         new_runs.append(run)
     return new_runs
