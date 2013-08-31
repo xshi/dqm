@@ -32,6 +32,8 @@ from Decoder_dqm import Decoder
 
 dataset = 'PSI2013'
 
+MAX_MARLIN_JOBS = 3
+
 if dataset == 'PSI2013':
     daq_pc = 'pixel_dev@pcpixeltb'
     daqdir = '/home/pixel_dev/PSI2013Data/incoming'
@@ -48,42 +50,31 @@ else:
 def main():
     args = sys.argv[1:]
     if len(args) == 0 :
-        return default(args)
+        return default()
 
     if ( len(args) == 1 and 
          is_valid_run_str(args[0]) ):
-        return rerun(args)
+        return default(args[0])
 
     function = getattr(dqm, args[0])
     return function(args[1:])
 
 
-def default(args):
-    actions = ['update_db', 
-               'ln_runs', 
-               'eut_dqm',
-               'chk_dat',
-               'pub_dqm']
-    
-    for action in actions:
-        function = getattr(dqm, action)
-        function(args)
-
-
-def rerun(args):
-    if len(args) != 1:
-        sys.stdout.write('Please indicate run range!\n')
-        sys.exit()
-
-    runs = get_range_from_str(args[0])
+def default(arg=None):
+    update_db()
+    ln_runs()
+    if arg is None:
+        runs = get_valid_new_runs()
+    else:
+        runs = get_range_from_str(arg)
 
     for run in runs:
-        eut_dqm([run])
-        chk_dat([run])
-        pub_dqm([run])
-
+       eut_dqm(run)
+       chk_dat(run)
+       pub_dqm(run)
+       
     
-def update_db(args):
+def update_db():
     cmd = 'ls %s' % daqdir
 
     output = proc_cmd(cmd)
@@ -97,7 +88,7 @@ def update_db(args):
     check_update_status(dbfile)
 
 
-def ln_runs(args):
+def ln_runs():
     dbfile = check_and_join(dbpath, dbname)
     db = open(dbfile)
     runs = json.load(db)
@@ -131,108 +122,97 @@ def ln_runs(args):
         sys.stdout.write(' OK.\n')
 
 
-def eut_dqm(runs, force=False):
-    new_runs = eut_dqm_runs(runs)    
-    if len(new_runs) == 1:
-        force = True
-    
-    for run in new_runs:
-        if not force and run_contains_file(run, '.begin_eut_dqm'):
-            continue
+def eut_dqm(run, force=False):
+    #new_runs = eut_dqm_runs(runs)    
+    #if len(new_runs) == 1:
+    #    force = True
+    if nun_of_process('Marlin') > MAX_MARLIN_JOBS:
+        sys.stdout.write(
+            'Number of running Marlin jobs is larger than %s !\n'
+            % MAX_MARLIN_JOBS)
+        return
 
-        if not force and run_contains_file(run, '.end_eut_dqm'):
-            continue
+    #for run in new_runs:
+    if not force and run_contains_file(run, '.begin_eut_dqm'):
+        return
+        
+    if not force and run_contains_file(run, '.end_eut_dqm'):
+        return
 
-        env_file = get_env_file(run)
-        procenv = source_bash(env_file)
-        procdir = procenv['simplesub']
+    if run_contains_file(run, '.end_eut_ful'):
+        return 
 
-        modes = ["fullconvert", "clustering", "hits"]        
+    env_file = get_env_file(run)
+    procenv = source_bash(env_file)
+    procdir = procenv['simplesub']
 
-        check_raw_file(procdir, run)
-        touch_file(run, '.begin_eut_dqm')
+    modes = ["fullconvert", "clustering", "hits"]        
 
-        for mode in modes:
-            sys.stdout.write('[eut_dqm] %s run %s ... ' %  (mode, run))
-            sys.stdout.flush()
-            
-            cmd = 'python config-cmspixel-dqm.py -a %s %s ' % (mode, run)
-            output = proc_cmd(cmd, procdir=procdir, env=procenv)
+    check_raw_file(procdir, run)
+    touch_file(run, '.begin_eut_dqm')
 
-            sys.stdout.write('OK.\n')
+    for mode in modes:
+        sys.stdout.write('[eut_dqm] %s run %s ... ' %  (mode, run))
+        sys.stdout.flush()
+        
+        cmd = 'python config-cmspixel-dqm.py -a %s %s ' % (mode, run)
+        output = proc_cmd(cmd, procdir=procdir, env=procenv)
+        sys.stdout.write('OK.\n')
 
-        touch_file(run, '.end_eut_dqm')
+    touch_file(run, '.end_eut_dqm')
 
 
-
-
-def chk_dat(runs, force=False): 
-    new_runs = chk_dat_runs(runs) 
-
-    if len(new_runs) == 1:
-        force = True
-
+def chk_dat(run, force=False): 
     decoder = Decoder()
     decoder.setNumROCs(8)
+    if not force and ( run_contains_file(run, '.begin_chk_dat') or 
+                       run_contains_file(run, '.end_chk_dat') ):
+        return
 
-    for run in new_runs:
-        if not force and ( run_contains_file(run, '.begin_chk_dat') or 
-                           run_contains_file(run, '.end_chk_dat') ):
-            continue
+    if run_contains_file_pattern(run, 'TestBoard2'): 
+        decoder.setROCVersion(0)
+    else:
+        decoder.setROCVersion(1)
 
-        if run_contains_file_pattern(run, 'TestBoard2'): 
-            decoder.setROCVersion(0)
-        else:
-            decoder.setROCVersion(1)
+    sys.stdout.write('[chk_dat] run %s ... ' % run)
+    sys.stdout.flush()
 
-        sys.stdout.write('[chk_dat] run %s ... ' % run)
-        sys.stdout.flush()
-
-        filename = os.path.join(datadir, run, 'mtb.bin')
-        outfile = os.path.join(datadir, run, 'chk_dat.txt')
-        orig_stdout = sys.stdout
-        f = file(outfile, 'w')
-        sys.stdout = f
+    filename = os.path.join(datadir, run, 'mtb.bin')
+    outfile = os.path.join(datadir, run, 'chk_dat.txt')
+    orig_stdout = sys.stdout
+    f = file(outfile, 'w')
+    sys.stdout = f
         
-        touch_file(run, '.begin_chk_dat')
-        try:
-            decoder.checkDataIntegrity(filename, 1, 5000)
-        except IOError:
-            pass 
-        sys.stdout = orig_stdout
-        f.close()
-        sys.stdout.write(' OK.\n')
-        touch_file(run, '.end_chk_dat')
+    touch_file(run, '.begin_chk_dat')
+    try:
+        decoder.checkDataIntegrity(filename, 1, 5000)
+    except IOError:
+        pass 
+    sys.stdout = orig_stdout
+    f.close()
+    sys.stdout.write(' OK.\n')
+    touch_file(run, '.end_chk_dat')
 
 
-
-def pub_dqm(runs, force=False):
-    new_runs = pub_dqm_runs(runs)
-    if len(new_runs) == 1:
-        force = True
-
-    for run in new_runs:
-        if not force and ( run_contains_file(run, '.begin_pub_dqm') or
-                           run_contains_file(run, '.end_pub_dqm') or 
-                           not run_contains_file(run, '.end_eut_dqm') or
-                           not run_contains_file(run, '.end_chk_dat')
-        ):
-            continue
+def pub_dqm(run, force=False):
+    if not force and ( run_contains_file(run, '.begin_pub_dqm') or
+                       run_contains_file(run, '.end_pub_dqm') or 
+                       not run_contains_file(run, '.end_eut_dqm') or
+                       not run_contains_file(run, '.end_chk_dat')
+                   ):
+        return
+    sys.stdout.write('[pub_dqm] run %s ... ' % run)
+    sys.stdout.flush()
         
-        sys.stdout.write('[pub_dqm] run %s ... ' % run)
-        sys.stdout.flush()
-        
-        cmd = 'dqm data/%s' %run
- 
-        env_file = get_env_file(run)
-        procenv = source_bash(env_file)
-        procdir = os.path.join(procenv['simplesub'], 'CMSPixel')
-
-        touch_file(run, '.begin_pub_dqm')
-        output = proc_cmd(cmd, procdir=procdir, env=procenv)
-        sys.stdout.write(' OK.\n')
-        touch_file(run, '.end_pub_dqm')
-
+    env_file = get_env_file(run)
+    procenv = source_bash(env_file)
+    procdir = os.path.join(procenv['simplesub'], 'CMSPixel')
+    
+    cmd = 'dqm data/%s' %run
+    touch_file(run, '.begin_pub_dqm')
+    output = proc_cmd(cmd, procdir=procdir, env=procenv)
+    sys.stdout.write(' OK.\n')
+    touch_file(run, '.end_pub_dqm')
 
 
 def status(args):
@@ -319,6 +299,7 @@ def make_tmpfile(f):
     tmpname = '.tmp_' + name
     tmpfile = os.path.join(path, tmpname)
     return tmpfile
+
     
 def check_and_join(filepath, filename=None):
     if not os.access(filepath, os.F_OK):
@@ -370,125 +351,6 @@ def check_update_status(f, verbose=1):
     return message
 
 
-def eut_dqm_runs(runs):
-    if len(runs) == 1:
-        return get_range_from_str(runs[0])        
-
-    new_runs = []
-    for root, dirs, files in os.walk(datadir):
-        if len(dirs) != 0: 
-            continue # bypass single files in the datadir  
-        
-        if len(files) == 0: #bypass the empty runs or single file
-            continue 
-
-        run = root.split('/')[-1]
-        if not run.isdigit():
-            continue 
-
-        if int(run) < begin_valid_run or int(run) > end_valid_run:
-            continue
-
-        if '.begin_eut_dqm' in files:
-            continue
-
-        if '.end_eut_dqm' in files:
-            continue
-        
-        new_runs.append(run)
-
-    new_runs.sort()
-    return new_runs
-
-
-def pub_dqm_runs(runs):
-    if len(runs) == 1:
-        return get_range_from_str(runs[0])        
-
-    new_runs = []
-    for root, dirs, files in os.walk(datadir):
-        if len(dirs) != 0: 
-            continue # bypass single files in the datadir  
-
-        if len(files) == 0: #bypass the empty runs or single file
-            continue
-
-        run = root.split('/')[-1]
-        if not run.isdigit():
-            continue
-
-        if int(run) < begin_valid_run or int(run) > end_valid_run:
-            continue
-             
-        if '.end_eut_dqm' not in files:
-            continue
-
-        if '.end_pub_dqm' in files:
-            continue
-
-        new_runs.append(run)
-
-    new_runs.sort()
-    return new_runs
-
-
-def pub_ful_runs(runs):
-    if len(runs) == 1:
-        return get_range_from_str(runs[0])        
-
-    new_runs = []
-    for root, dirs, files in os.walk(datadir):
-        if len(dirs) != 0: 
-            continue # bypass single files in the datadir  
-        if len(files) == 0: #bypass the empty runs or single file
-            continue
-
-        run = root.split('/')[-1]
-        if not run.isdigit():
-            continue
-        
-        if int(run) < begin_valid_run or int(run) > end_valid_run:
-            continue
-             
-        if '.end_eut_ful' not in files:
-            continue
-        
-        if '.end_pub_ful' in files:
-            continue
-
-        new_runs.append(run)
-
-    return new_runs
-
-
-def chk_dat_runs(runs):
-    if len(runs) == 1:
-        return get_range_from_str(runs[0])        
-
-    new_runs = []
-    for root, dirs, files in os.walk(datadir):
-        if len(dirs) != 0 or len(files) == 0: 
-            continue 
-
-        run = root.split('/')[-1]
-        if not run.isdigit():
-            continue
-        
-        if int(run) < begin_valid_run or int(run) > end_valid_run:
-            continue
-
-        if '.begin_chk_dat' in files:
-            continue
-
-        if '.end_chk_dat' in files:
-            continue
-       
-        new_runs.append(run)
-
-    new_runs.sort()
-    return new_runs
-
-
 def find_runs_contain(fname):
     new_runs = []
     for root, dirs, files in os.walk(datadir):
@@ -502,7 +364,7 @@ def find_runs_contain(fname):
 
 
 def get_valid_runs():
-    new_runs = []
+    runs = []
     for root, dirs, files in os.walk(datadir):
         if len(dirs) != 0: 
             continue # bypass single files in the datadir  
@@ -513,11 +375,37 @@ def get_valid_runs():
         
         if int(run) < begin_valid_run or int(run) > end_valid_run:
             continue
+        runs.append(run)
+
+    runs.sort()
+    return runs
+
+
+def get_valid_new_runs():
+    runs = get_valid_runs()
+    new_runs = []
+    for run in runs:
+        if run_contains_file(run, '.begin_eut_dqm'):
+            continue
+
+        if run_contains_file(run, '.end_eut_dqm'):
+            continue
+
+        if run_contains_file(run, '.begin_chk_dat'):
+            continue
+
+        if run_contains_file(run, '.end_chk_dat'):
+            continue
+
+        if run_contains_file(run, '.begin_eut_ful'):
+            continue
+
+        if run_contains_file(run, '.end_eut_ful'):
+            continue
+
         new_runs.append(run)
-
-    new_runs.sort()
     return new_runs
-
+            
 
 def get_runs_from_ls(output):
     runs = {}
@@ -659,6 +547,7 @@ def run_contains_file_pattern(run, pat):
                 return True
     return False
 
+
 def source_bash(f):
     pipe = subprocess.Popen(". %s; env" % f, stdout=subprocess.PIPE,
                             shell=True)
@@ -672,6 +561,14 @@ def get_env_file(run):
     if run_contains_file_pattern(run, 'TestBoard2'): 
         env_file = '/home/pixel_dev/dqm/bash/dqm_env_v0.sh'
     return env_file
+
+
+def nun_of_process(process_name):
+    proc = subprocess.Popen(["pgrep", process_name], 
+                            stdout=subprocess.PIPE) 
+    stdout = proc.communicate()[0]
+    num = len( stdout.split())
+    return num 
 
 
 if __name__ == '__main__':
