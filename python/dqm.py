@@ -45,8 +45,6 @@ else:
     raise NameError(dataset)
 
 
-
-
 def main():
     args = sys.argv[1:]
     function = getattr(dqm, args[0])
@@ -133,92 +131,6 @@ def eut_dqm(runs, force=False):
         touch_file(run, '.end_eut_dqm')
 
 
-def pub_dqm(runs, force=False):
-    new_runs = pub_dqm_runs(runs)
-    if len(new_runs) == 1:
-        force = True
-
-    for run in new_runs:
-        if not force and run_contains_file(run, '.begin_pub_dqm'):
-            continue
-
-        if not force and run_contains_file(run, '.end_pub_dqm'):
-            continue
-
-        sys.stdout.write('[pub_dqm] run %s ... ' % run)
-        sys.stdout.flush()
-        
-        cmd = 'dqm data/%s' %run
- 
-        env_file = get_env_file(run)
-        procenv = source_bash(env_file)
-        procdir = os.path.join(procenv['simplesub'], 'CMSPixel')
-
-        touch_file(run, '.begin_pub_dqm')
-        output = proc_cmd(cmd, procdir=procdir, env=procenv)
-        sys.stdout.write(' OK.\n')
-        touch_file(run, '.end_pub_dqm')
-
-
-
-def eut_ful(runs, force=False):
-    new_runs = eut_ful_runs(runs)
-    if len(new_runs) == 1:
-        force = True
-
-    for run in new_runs:
-        if not force and run_contains_file(run, '.begin_eut_ful'):
-            continue
-
-        if not force and run_contains_file(run, '.end_eut_ful'):
-            continue
-        
-        env_file = get_env_file(run)
-        procenv = source_bash(env_file)
-        procdir = procenv['simplesub']
- 
-        modes = ["fullconvert", "clustering", "hits"]#, "tracks_noalign"]
-
-        check_raw_file(procdir, run)
-        touch_file(run, '.begin_eut_ful')
-
-        for mode in modes:
-            sys.stdout.write('[eut_ful] %s run %s ... ' %  (mode, run))
-            sys.stdout.flush()
-            cmd = 'python config-cmspixel.py -a %s %s ' % (mode, run)
-            output = proc_cmd(cmd, procdir=procdir, env=procenv)
-            sys.stdout.write('OK.\n')
-
-        touch_file(run, '.end_eut_ful')
-
-
-
-
-def pub_ful(runs, force=False):
-    new_runs = pub_ful_runs(runs)
-    if len(new_runs) == 1:
-        force = True
-
-    for run in new_runs:
-        if not force and run_contains_file(run, '.begin_pub_ful'):
-            continue
-
-        if not force and run_contains_file(run, '.end_pub_ful'):
-            continue
-        
-        sys.stdout.write('[pub_ful] run %s ... ' % run)
-        sys.stdout.flush()
-        
-        cmd = 'dqm data/%s' %run
-
-        env_file = get_env_file(run)
-        procenv = source_bash(env_file)
-        procdir = os.path.join(procenv['simplesub'], 'CMSPixel')
-
-        touch_file(run, '.begin_pub_ful')
-        output = proc_cmd(cmd, procdir=procdir, env=procenv)
-        sys.stdout.write(' OK.\n')
-        touch_file(run, '.end_pub_ful')
 
 
 def chk_dat(runs, force=False): 
@@ -260,29 +172,32 @@ def chk_dat(runs, force=False):
         touch_file(run, '.end_chk_dat')
 
 
-def pub_dat(runs, force=False):
-    new_runs = pub_dat_runs(runs)
+
+def pub_dqm(runs, force=False):
+    new_runs = pub_dqm_runs(runs)
     if len(new_runs) == 1:
         force = True
 
     for run in new_runs:
-        if not force and ( run_contains_file(run, '.begin_pub_dat') or 
-                           run_contains_file(run, '.end_pub_dat') ):
+        if not force and ( run_contains_file(run, '.begin_pub_dqm') or
+                           run_contains_file(run, '.end_pub_dqm') or 
+                           not run_contains_file(run, '.end_chk_dat') ):
             continue
         
-        sys.stdout.write('[pub_dat] run %s ... ' % run)
+        sys.stdout.write('[pub_dqm] run %s ... ' % run)
         sys.stdout.flush()
         
         cmd = 'dqm data/%s' %run
-
+ 
         env_file = get_env_file(run)
         procenv = source_bash(env_file)
         procdir = os.path.join(procenv['simplesub'], 'CMSPixel')
 
-        touch_file(run, '.begin_pub_dat')
+        touch_file(run, '.begin_pub_dqm')
         output = proc_cmd(cmd, procdir=procdir, env=procenv)
         sys.stdout.write(' OK.\n')
-        touch_file(run, '.end_pub_dat')
+        touch_file(run, '.end_pub_dqm')
+
 
 
 def status(args):
@@ -292,7 +207,6 @@ def status(args):
         runs = get_range_from_str(args[0])
     else:
         runs = args
-    
 
     for run in runs:
         status = ''
@@ -446,38 +360,6 @@ def eut_dqm_runs(runs):
     return new_runs
 
 
-def eut_ful_runs(runs):
-    if len(runs) == 1:
-        return get_range_from_str(runs[0])        
-
-    new_runs = []
-    for root, dirs, files in os.walk(datadir):
-        if len(dirs) != 0:
-            continue # bypass single files in the datadir
-        
-        if len(files) == 0: #bypass the empty runs or single file
-            continue
-
-        run = root.split('/')[-1]
-        if not run.isdigit():
-            continue 
-        
-        if int(run) < begin_valid_run or int(run) > end_valid_run:
-            continue
-        
-        if '.begin_eut_ful' in files:
-            continue
-                
-        if '.end_eut_ful' in files:
-            continue
-
-        new_runs.append(run)
-
-    new_runs.sort()
-    return new_runs
-                
-                
-                
 def pub_dqm_runs(runs):
     if len(runs) == 1:
         return get_range_from_str(runs[0])        
@@ -560,36 +442,6 @@ def chk_dat_runs(runs):
         if '.end_chk_dat' in files:
             continue
        
-        new_runs.append(run)
-
-    new_runs.sort()
-    return new_runs
-
-
-def pub_dat_runs(runs):
-    if len(runs) == 1:
-        return get_range_from_str(runs[0])        
-
-    new_runs = []
-    for root, dirs, files in os.walk(datadir):
-        if len(dirs) != 0: 
-            continue # bypass single files in the datadir  
-        if len(files) == 0: #bypass the empty runs or single file
-            continue
-
-        run = root.split('/')[-1]
-        if not run.isdigit():
-            continue
-        
-        if int(run) < begin_valid_run or int(run) > end_valid_run:
-            continue
-             
-        if '.end_chk_dat' not in files:
-            continue
-        
-        if '.end_pub_dat' in files:
-            continue
-
         new_runs.append(run)
 
     new_runs.sort()
