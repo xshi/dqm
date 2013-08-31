@@ -130,7 +130,7 @@ def eut_dqm(run, force=False):
         if s != 'yes':
             return
 
-    if nun_of_process('Marlin') > MAX_MARLIN_JOBS:
+    if num_of_process('Marlin') > MAX_MARLIN_JOBS:
         sys.stdout.write(
             'Number of running Marlin jobs is larger than %s !\n'
             % MAX_MARLIN_JOBS)
@@ -604,7 +604,7 @@ def get_env_file(run):
     return env_file
 
 
-def nun_of_process(process_name):
+def num_of_process(process_name):
     proc = subprocess.Popen(["pgrep", process_name], 
                             stdout=subprocess.PIPE) 
     stdout = proc.communicate()[0]
