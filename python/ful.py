@@ -10,7 +10,7 @@ import sys
 import os 
 from dqm import (is_valid_run_str, get_range_from_str, 
                  get_env_file, source_bash, touch_file, 
-                 proc_cmd, check_raw_file
+                 proc_cmd, check_raw_file, run_contains_file
                  )
 import ful 
 
@@ -32,40 +32,23 @@ else:
 
 def main():
     args = sys.argv[1:]
-    if len(args) == 0 :
+    if len(args) == 0 or len(args) == 1:
         return default(args)
-
-    if ( len(args) == 1 and 
-         is_valid_run_str(args[0]) ):
-        return rerun(args)
 
     function = getattr(ful, args[0])
     return function(args[1:])
 
 
 def default(args):
-    actions = ['eut_ful', 'pub_ful']
-    for action in actions:
-        function = getattr(ful, action)
-        function(args)
+    new_runs = eut_ful_runs(args)
 
-
-def rerun(args):
-    if len(args) != 1:
-        sys.stdout.write('Please indicate run range!\n')
-        sys.exit()
-
-    runs = get_range_from_str(args[0])
-    for run in runs:
+    for run in new_runs:
         eut_ful([run])
         pub_ful([run])
 
 
 def eut_ful(runs, force=False):
     new_runs = eut_ful_runs(runs)
-    if len(new_runs) == 1:
-        force = True
-
     for run in new_runs:
         if not force and run_contains_file(run, '.begin_eut_ful'):
             continue
