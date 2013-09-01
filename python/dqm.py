@@ -285,6 +285,18 @@ def reset_ful(args):
         sys.exit()
         
     runs = args[0]
+    fnames = ['.begin_pub_ful', '.end_pub_ful']
+
+    for fname in fnames: 
+        batch_rm([fname, runs])
+
+
+def reset_ful_eut(args):
+    if len(args) != 1 : 
+        sys.stdout.write('Please give the run range! \n')
+        sys.exit()
+        
+    runs = args[0]
     fnames = ['.begin_eut_ful', 
               '.end_eut_ful', 
               '.begin_pub_ful', 
