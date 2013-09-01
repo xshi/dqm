@@ -11,7 +11,7 @@ import os
 from dqm import (is_valid_run_str, get_range_from_str, 
                  get_env_file, source_bash, touch_file, 
                  proc_cmd, check_raw_file, run_contains_file,
-                 get_valid_runs, num_of_process
+                 get_valid_runs, num_of_process, get_range_from_str
                  )
 import ful 
 
@@ -33,10 +33,20 @@ else:
 
 
 def main():
-    runs = get_valid_new_ful_runs()
+    args = sys.argv[1:]
+
+    if len(args) == 0: 
+        runs = get_valid_new_ful_runs()
+    else:
+        runs = get_range_from_str(args[0])
+
+    force = False 
+    if len(runs) == 1: 
+        force = True 
+
     for run in runs:
-        eut_ful(run)
-        pub_ful(run)
+        eut_ful(run, force=force)
+        pub_ful(run, force=force)
 
 
 def eut_ful(run, force=False):
