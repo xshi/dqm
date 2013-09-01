@@ -45,7 +45,7 @@ def main():
         force = True 
 
     for run in runs:
-        eut_ful(run, force=force)
+        eut_ful(run) # force only be done by reset_ful
         pub_ful(run, force=force)
 
 
@@ -107,13 +107,9 @@ def get_valid_new_ful_runs():
     new_runs = []
     runs = get_valid_runs()
     for run in runs:
-        if run_contains_file(run, '.begin_eut_ful'):
+        if ( run_contains_file(run, '.end_eut_ful') and
+             run_contains_file(run, '.end_pub_ful')):
             continue
-
-        if run_contains_file(run, '.end_eut_ful'):
-            continue
-
-        new_runs.append(run)
     return new_runs
             
 
