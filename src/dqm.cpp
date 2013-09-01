@@ -309,7 +309,7 @@ RootWContent* procCluster(string base_name, int id, TFile *f, bool verbose=false
   stringstream convert; 
   char* get_hname(string a, string b, string id_str, string suffix=""); 
   
-  int ww = 800; 
+  int ww = 850; 
   int wh = 600; 
   
   convert << id;
@@ -401,7 +401,7 @@ RootWContent* procCluster(string base_name, int id, TFile *f, bool verbose=false
 
   myCanvas->cd();
   clustersize_d0->Draw();
-  RootWImage*  clustersize_d0_img = new RootWImage(myCanvas, 600, 600);
+  RootWImage*  clustersize_d0_img = new RootWImage(myCanvas, ww, wh);
   myContent->addItem(clustersize_d0_img);
 
   // ---------------------------------------------------------
@@ -547,10 +547,10 @@ void setTDRStyle() {
   // tdrStyle->SetStatY(Float_t y = 0);
 
 // Margins:
-  tdrStyle->SetPadTopMargin(0.05);
+  tdrStyle->SetPadTopMargin(0.08);
   tdrStyle->SetPadBottomMargin(0.1);
   tdrStyle->SetPadLeftMargin(0.1);
-  tdrStyle->SetPadRightMargin(0.2);
+  tdrStyle->SetPadRightMargin(0.3);
 
 // For the Global title:
   // tdrStyle->SetOptTitle(0);
@@ -564,15 +564,15 @@ void setTDRStyle() {
   // tdrStyle->SetTitleX(0); // Set the position of the title box
   // tdrStyle->SetTitleY(0.985); // Set the position of the title box
   // tdrStyle->SetTitleStyle(Style_t style = 1001);
-  // tdrStyle->SetTitleBorderSize(2);
+  tdrStyle->SetTitleBorderSize(0);
   
-  // tdrStyle->SetTitleAlign(23);
+  // tdrStyle->SetTitleAlign(13);
   // tdrStyle->SetTitleX(.99); 
 
-// For the axis titles:
+  // For the axis titles:
   tdrStyle->SetTitleColor(1, "XYZ");
   tdrStyle->SetTitleFont(42, "XYZ");
-  tdrStyle->SetTitleSize(0.04, "XYZ");
+  tdrStyle->SetTitleSize(0.01, "XYZ");
   // tdrStyle->SetTitleXSize(Float_t size = 0.02); // Another way to set the size?
   // tdrStyle->SetTitleYSize(Float_t size = 0.02);
 
