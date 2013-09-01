@@ -9,11 +9,13 @@ __author__ = "Xin Shi <Xin.Shi@cern.ch>"
 
 import sys
 import os 
+import subprocess
 
 sys.path.append('/home/pixel_dev/cmspxltb/trunk/pycohal')
 import Decoder
 
 dataset = 'PSI2013'
+MAX_RUNNING_JOBS = 1   
 
 if dataset == 'PSI2013':
     daq_pc = 'pixel_dev@pcpixeltb'
@@ -56,6 +58,13 @@ def main():
         if run_contains_file(run, '.end_chk_data_integrity'):
             continue
 
+        if num_of_process('chk_data_int') > MAX_RUNNING_JOBS:
+            sys.stdout.write(
+                'Number of running chk_data_int jobs is larger than %s !\n'
+                % MAX_RUNNING_JOBS)
+            continue
+
+        sys.exit()
         if run_contains_file_pattern(run, 'TestBoard2'): 
             decoder.setROCVersion(0)
         else:
@@ -163,6 +172,14 @@ def run_contains_file_pattern(run, pat):
             if pat in f:
                 return True
     return False
+
+
+def num_of_process(process_name):
+    proc = subprocess.Popen(["pgrep", process_name], 
+                            stdout=subprocess.PIPE) 
+    stdout = proc.communicate()[0]
+    num = len( stdout.split())
+    return num 
 
     
 if __name__ == '__main__':
