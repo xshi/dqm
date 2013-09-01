@@ -451,6 +451,8 @@ RootWContent* procCluster(string base_name, int id, TFile *f, bool verbose=false
 // ---------------------------------------------------------
 //  1.9 Column Hits vs Event 
 // ---------------------------------------------------------
+  
+  /*
   h_name = get_hname(base_name, "/colTime_d", id_str);
   TH2D *colTime = (TH2D*)f->Get(h_name); 
   
@@ -466,7 +468,29 @@ RootWContent* procCluster(string base_name, int id, TFile *f, bool verbose=false
     myContent->addItem(colTime_img);
 
   }
-  
+  */ 
+
+  TH2D *colTime; 
+      
+  for (int i=0; i<4; i++){
+
+    TString hname = Form("/colTime%d_d", i); 
+    // cout << "i=" << i << ", hname = " <<  hname << endl; 
+    h_name = get_hname(base_name, hname.Data(), id_str);
+    colTime = (TH2D*)f->Get(h_name);
+
+    if (colTime) {
+      colTime->GetYaxis()->SetTitle("Col");
+      colTime->GetXaxis()->SetTitle("Events");
+      colTime->GetZaxis()->SetLabelSize(0.02);
+      
+      myCanvas->cd();
+      colTime->Draw("colz");
+      RootWImage* colTime_img = new RootWImage(myCanvas, ww, wh); 
+      myContent->addItem(colTime_img);
+    }
+  }
+    
   if (verbose) cout << " OK." << endl; 
   return myContent; 
 }
