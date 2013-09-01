@@ -444,6 +444,23 @@ RootWContent* procCluster(string base_name, int id, TFile *f, bool verbose=false
   RootWImage*  clusterSizeVsCharge_d0_img = new RootWImage(myCanvas, 600, 600);
   myContent->addItem(clusterSizeVsCharge_d0_img);
 
+
+// ---------------------------------------------------------
+//  1.9 Column Hits vs Event 
+// ---------------------------------------------------------
+  h_name = get_hname(base_name, "/colTime_d", id_str);
+  TH2D *colTime = (TH2D*)f->Get(h_name); 
+  
+  colTime->GetYaxis()->SetTitle("Col");
+  colTime->GetXaxis()->SetTitle("Events");
+
+  colTime->GetZaxis()->SetLabelSize(0.02);
+
+  myCanvas->cd();
+  colTime->Draw("colz");
+  RootWImage* colTime_img = new RootWImage(myCanvas, 600, 600);
+  myContent->addItem(colTime_img);
+
   if (verbose) cout << " OK." << endl; 
   return myContent; 
 }
