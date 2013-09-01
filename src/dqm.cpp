@@ -764,6 +764,9 @@ RootWContent* procTracking(string base_name, int id, TFile *f, bool verbose=fals
   if (verbose) cout << content_name << " ..." << flush; 
   myCanvas->cd();
 
+
+  pl0_residualX->GetXaxis()->SetTitle("X residual [mm]");
+
   pl0_residualX->Draw();
   RootWImage*  pl0_residualX_img = new RootWImage(myCanvas, ww, wh);
   myContent->addItem(pl0_residualX_img);
@@ -780,6 +783,7 @@ RootWContent* procTracking(string base_name, int id, TFile *f, bool verbose=fals
   
   myCanvas->cd();
 
+  pl0_residualY->GetXaxis()->SetTitle("Y residual [mm]");
   pl0_residualY->Draw();
   RootWImage*  pl0_residualY_img = new RootWImage(myCanvas, ww, wh);
   myContent->addItem(pl0_residualY_img);
