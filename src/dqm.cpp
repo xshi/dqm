@@ -200,20 +200,23 @@ int main(int argc, char** argv) {
   // ---------------------------------------------------------
   // 4. Making Detectioin Efficiency page  
   // ---------------------------------------------------------
-  RootWPage* myPage4; 
-  if (f2) {
-  string page_name4 = "efficiency"; 
-  myPage4 = new RootWPage(page_name4); 
-  myPage4->setAddress("four.html");
-
-  cout << "Processing: " << page_name4 << " ... \n" << flush;        
-  
-  // TFile *f4 = new TFile(tracks_file);
+  RootWPage* myPage4 = NULL; 
   base_name = "MyEUTelFitTuple"; 
 
-  myContent = procEfficiency(base_name, f2);
-  myPage4->addContent(myContent);
-  
+  if (f2) {
+    myContent = procEfficiency(base_name, f2);
+    if (myContent != NULL) {
+      
+      string page_name4 = "efficiency"; 
+      myPage4 = new RootWPage(page_name4); 
+      myPage4->setAddress("four.html");
+      
+      cout << "Processing: " << page_name4 << " ... \n" << flush;        
+      
+      // TFile *f4 = new TFile(tracks_file);
+      
+      myPage4->addContent(myContent);
+    }
   }
 
   // ---------------------------------------------------------
@@ -260,7 +263,8 @@ int main(int argc, char** argv) {
   if (f2) {
     mySite->addPage(myPage2);
     mySite->addPage(myPage3);
-    mySite->addPage(myPage4);
+    if (myPage4 != NULL) 
+      mySite->addPage(myPage4);
   }
   
   if (f5) {
@@ -841,12 +845,17 @@ RootWContent* procEfficiency(string base_name, TFile *f, bool verbose=false) {
 
   TTree *EUFitEff = (TTree*)f->Get(t_name);
 
-  if (!EUFitEff) return 0; 
+  // if (!EUFitEff) return 0;
 
-  myCanvas->cd();
-  EUFitEff->Draw("DetectionEff_DUTId4");
-  RootWImage*  DetectionEff_DUTId4_img = new RootWImage(myCanvas, ww, wh);
-  myContent->addItem(DetectionEff_DUTId4_img);
+  if ( EUFitEff && EUFitEff->GetBranch("DetectionEff_DUTId4") ) {
+    
+    myCanvas->cd();
+    EUFitEff->Draw("DetectionEff_DUTId4");
+    RootWImage*  DetectionEff_DUTId4_img = new RootWImage(myCanvas, ww, wh);
+    myContent->addItem(DetectionEff_DUTId4_img);
+    return myContent; 
+  }
+  
+  return NULL; 
 
-  return myContent; 
 }
