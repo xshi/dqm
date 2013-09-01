@@ -255,10 +255,12 @@ def status(args):
         if '(!?)' in status:
             end_runs.append(run)
 
-    print 'Begin runs: \n', ','.join(begin_runs)
-    print 'End runs:\n', ','.join(end_runs)
+    if begin_runs:
+        print 'Begin runs: \n', ','.join(begin_runs)
+    
+    if end_runs:
+        print 'End runs:\n', ','.join(end_runs)
  
-
 def reset(args):
     if len(args) != 1 : 
         sys.stdout.write('Please give the run range! \n')
