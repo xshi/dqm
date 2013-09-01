@@ -1,5 +1,5 @@
 #!/bin/sh
-
+# Usage: 
 # crontab -e 
 # * * * * * /home/pixel_dev/dqm/bash/cron_jobs.sh
 
