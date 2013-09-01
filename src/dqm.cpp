@@ -454,16 +454,19 @@ RootWContent* procCluster(string base_name, int id, TFile *f, bool verbose=false
   h_name = get_hname(base_name, "/colTime_d", id_str);
   TH2D *colTime = (TH2D*)f->Get(h_name); 
   
-  colTime->GetYaxis()->SetTitle("Col");
-  colTime->GetXaxis()->SetTitle("Events");
+  if (colTime) {
+    colTime->GetYaxis()->SetTitle("Col");
+    colTime->GetXaxis()->SetTitle("Events");
+    
+    colTime->GetZaxis()->SetLabelSize(0.02);
+    
+    myCanvas->cd();
+    colTime->Draw("colz");
+    RootWImage* colTime_img = new RootWImage(myCanvas, ww, wh); 
+    myContent->addItem(colTime_img);
 
-  colTime->GetZaxis()->SetLabelSize(0.02);
-
-  myCanvas->cd();
-  colTime->Draw("colz");
-  RootWImage* colTime_img = new RootWImage(myCanvas, ww, wh); 
-  myContent->addItem(colTime_img);
-
+  }
+  
   if (verbose) cout << " OK." << endl; 
   return myContent; 
 }
