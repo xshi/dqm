@@ -8,13 +8,15 @@ __author__ = "Xin Shi <Xin.Shi@cern.ch>"
 
 import sys
 import os 
-from dqm import (is_valid_run_str, get_range_from_str, 
+from dqm import (is_valid_run_str, get_range_from_str, status, 
                  get_env_file, source_bash, touch_file, 
                  proc_cmd, check_raw_file, run_contains_file,
-                 get_valid_runs, num_of_process, get_range_from_str
+                 get_valid_runs, num_of_process, get_range_from_str,
                  )
-import ful 
+from dqm import reset_ful as reset 
+from dqm import reset_ful_eut as reset_eut  
 
+import ful 
 
 dataset = 'PSI2013'
 MAX_MARLIN_JOBS = 2  
@@ -34,11 +36,22 @@ else:
 
 def main():
     args = sys.argv[1:]
+    if len(args) == 0 :
+        return default()
 
-    if len(args) == 0: 
+    if ( len(args) == 1 and 
+         is_valid_run_str(args[0]) ):
+        return default(args[0])
+
+    function = getattr(ful, args[0])
+    return function(args[1:])
+
+
+def default(arg=None):
+    if arg is None: 
         runs = get_valid_new_ful_runs()
     else:
-        runs = get_range_from_str(args[0])
+        runs = get_range_from_str(arg)
 
     force = False 
     if len(runs) == 1: 
@@ -110,6 +123,8 @@ def get_valid_new_ful_runs():
         if ( run_contains_file(run, '.end_eut_ful') and
              run_contains_file(run, '.end_pub_ful')):
             continue
+
+        new_runs.append(run)
     return new_runs
             
 
