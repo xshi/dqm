@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
   
   const UInt_t numberOfSteps = 5;
   const Int_t temperature_levels = 256; 
-  
+
   gStyle->SetNumberContours(temperature_levels);
   
   Double_t stops[numberOfSteps] = { 0.00, 0.34, 0.61, 0.84, 1.00 };
@@ -308,7 +308,10 @@ RootWContent* procCluster(string base_name, int id, TFile *f, bool verbose=false
   string id_str; 
   stringstream convert; 
   char* get_hname(string a, string b, string id_str, string suffix=""); 
-
+  
+  int ww = 800; 
+  int wh = 600; 
+  
   convert << id;
   id_str = convert.str(); 
 
@@ -334,7 +337,7 @@ RootWContent* procCluster(string base_name, int id, TFile *f, bool verbose=false
 
   myCanvas->cd();
   pixelPerEvent_d0->Draw(); 
-  RootWImage* pixelPerEvent_d0_img = new RootWImage(myCanvas, 600, 600);
+  RootWImage* pixelPerEvent_d0_img = new RootWImage(myCanvas, ww, wh);
   myContent->addItem(pixelPerEvent_d0_img);
 
   // ---------------------------------------------------------
@@ -353,7 +356,7 @@ RootWContent* procCluster(string base_name, int id, TFile *f, bool verbose=false
   myCanvas->cd();
 
   chargeMap_d0->Draw("colz");
-  RootWImage*  chargeMap_d0_img = new RootWImage(myCanvas, 600, 600);
+  RootWImage*  chargeMap_d0_img = new RootWImage(myCanvas, ww, wh); 
   myContent->addItem(chargeMap_d0_img);
   
 
@@ -367,7 +370,7 @@ RootWContent* procCluster(string base_name, int id, TFile *f, bool verbose=false
 
   myCanvas->cd();
   clusterSignal_d0->Draw();
-  RootWImage*  clusterSignal_d0_img = new RootWImage(myCanvas, 600, 600);
+  RootWImage*  clusterSignal_d0_img = new RootWImage(myCanvas, ww, wh); 
   myContent->addItem(clusterSignal_d0_img);
 
   // ---------------------------------------------------------
@@ -384,7 +387,7 @@ RootWContent* procCluster(string base_name, int id, TFile *f, bool verbose=false
 
   myCanvas->cd();
   hitMap_d0->Draw("colz");
-  RootWImage* hitMap_d0_img = new RootWImage(myCanvas, 600, 600);
+  RootWImage* hitMap_d0_img = new RootWImage(myCanvas, ww, wh); 
   myContent->addItem(hitMap_d0_img);
 
 
@@ -410,7 +413,7 @@ RootWContent* procCluster(string base_name, int id, TFile *f, bool verbose=false
 
   myCanvas->cd();
   Xclusterwidth_d0->Draw();
-  RootWImage*  Xclusterwidth_d0_img = new RootWImage(myCanvas, 600, 600);
+  RootWImage*  Xclusterwidth_d0_img = new RootWImage(myCanvas, ww, wh); 
   myContent->addItem(Xclusterwidth_d0_img);
 
   // ---------------------------------------------------------
@@ -423,7 +426,7 @@ RootWContent* procCluster(string base_name, int id, TFile *f, bool verbose=false
 
   myCanvas->cd();
   Yclusterwidth_d0->Draw();
-  RootWImage*  Yclusterwidth_d0_img = new RootWImage(myCanvas, 600, 600);
+  RootWImage*  Yclusterwidth_d0_img = new RootWImage(myCanvas, ww, wh); 
   myContent->addItem(Yclusterwidth_d0_img);
 
 
@@ -441,7 +444,7 @@ RootWContent* procCluster(string base_name, int id, TFile *f, bool verbose=false
 
   myCanvas->cd();
   clusterSizeVsCharge_d0->Draw("colz");
-  RootWImage*  clusterSizeVsCharge_d0_img = new RootWImage(myCanvas, 600, 600);
+  RootWImage*  clusterSizeVsCharge_d0_img = new RootWImage(myCanvas, ww, wh);
   myContent->addItem(clusterSizeVsCharge_d0_img);
 
 
@@ -458,7 +461,7 @@ RootWContent* procCluster(string base_name, int id, TFile *f, bool verbose=false
 
   myCanvas->cd();
   colTime->Draw("colz");
-  RootWImage* colTime_img = new RootWImage(myCanvas, 600, 600);
+  RootWImage* colTime_img = new RootWImage(myCanvas, ww, wh); 
   myContent->addItem(colTime_img);
 
   if (verbose) cout << " OK." << endl; 
@@ -528,7 +531,9 @@ void setTDRStyle() {
 
 // For the statistics box:
   tdrStyle->SetOptFile(0);
-  tdrStyle->SetOptStat("mr"); // To display the mean and RMS:   SetOptStat("mr");
+  // tdrStyle->SetOptStat("mr"); // To display the mean and RMS:   SetOptStat("mr");
+
+  tdrStyle->SetOptStat(1111111); // To display the mean and RMS:   SetOptStat("mr");
   tdrStyle->SetStatColor(kWhite);
   tdrStyle->SetStatFont(42);
   tdrStyle->SetStatFontSize(0.025);
@@ -545,7 +550,7 @@ void setTDRStyle() {
   tdrStyle->SetPadTopMargin(0.05);
   tdrStyle->SetPadBottomMargin(0.1);
   tdrStyle->SetPadLeftMargin(0.1);
-  // tdrStyle->SetPadRightMargin(0.05);
+  tdrStyle->SetPadRightMargin(0.2);
 
 // For the Global title:
   // tdrStyle->SetOptTitle(0);
