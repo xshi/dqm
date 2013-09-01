@@ -613,7 +613,7 @@ void setTDRStyle() {
   tdrStyle->SetLabelColor(1, "XYZ");
   tdrStyle->SetLabelFont(42, "XYZ");
   //  tdrStyle->SetLabelOffset(0.007, "XYZ");
-  tdrStyle->SetLabelSize(0.05, "XYZ");
+  tdrStyle->SetLabelSize(0.02, "XYZ");
 
 // For the axis:
   tdrStyle->SetAxisColor(1, "XYZ");
@@ -695,6 +695,8 @@ char* get_tname_tracks(string a, string b){
 }
 
 RootWContent* procOnTrackCluster(string base_name, int id, TFile *f, bool verbose=false) {
+  int ww = 850; 
+  int wh = 600; 
 
   string id_str; 
   stringstream convert; 
@@ -724,7 +726,7 @@ RootWContent* procOnTrackCluster(string base_name, int id, TFile *f, bool verbos
   myCanvas->cd();
 
   pl0_onTrackHits->Draw("colz");
-  RootWImage*  pl0_onTrackHits_img = new RootWImage(myCanvas, 600, 600);
+  RootWImage*  pl0_onTrackHits_img = new RootWImage(myCanvas, ww, wh);
   myContent->addItem(pl0_onTrackHits_img);
 
   if (verbose) cout << " OK." << endl; 
@@ -740,6 +742,9 @@ RootWContent* procTracking(string base_name, int id, TFile *f, bool verbose=fals
 
   convert << id;
   id_str = convert.str(); 
+
+  int ww = 850; 
+  int wh = 600; 
 
   string content_name = "Detector " + id_str;  
   RootWContent* myContent = new RootWContent(content_name); 
@@ -760,7 +765,7 @@ RootWContent* procTracking(string base_name, int id, TFile *f, bool verbose=fals
   myCanvas->cd();
 
   pl0_residualX->Draw();
-  RootWImage*  pl0_residualX_img = new RootWImage(myCanvas, 600, 600);
+  RootWImage*  pl0_residualX_img = new RootWImage(myCanvas, ww, wh);
   myContent->addItem(pl0_residualX_img);
 
 
@@ -776,7 +781,7 @@ RootWContent* procTracking(string base_name, int id, TFile *f, bool verbose=fals
   myCanvas->cd();
 
   pl0_residualY->Draw();
-  RootWImage*  pl0_residualY_img = new RootWImage(myCanvas, 600, 600);
+  RootWImage*  pl0_residualY_img = new RootWImage(myCanvas, ww, wh);
   myContent->addItem(pl0_residualY_img);
 
 
@@ -791,7 +796,7 @@ RootWContent* procTracking(string base_name, int id, TFile *f, bool verbose=fals
   
   myCanvas->cd();
   pl0_pullsX->Draw();
-  RootWImage*  pl0_pullsX_img = new RootWImage(myCanvas, 600, 600);
+  RootWImage*  pl0_pullsX_img = new RootWImage(myCanvas, ww, wh);
   myContent->addItem(pl0_pullsX_img);
 
   // ---------------------------------------------------------
@@ -805,7 +810,7 @@ RootWContent* procTracking(string base_name, int id, TFile *f, bool verbose=fals
   
   myCanvas->cd();
   pl0_pullsY->Draw();
-  RootWImage*  pl0_pullsY_img = new RootWImage(myCanvas, 600, 600);
+  RootWImage*  pl0_pullsY_img = new RootWImage(myCanvas, ww, wh);
   myContent->addItem(pl0_pullsY_img);
 
 
@@ -820,6 +825,9 @@ RootWContent* procEfficiency(string base_name, TFile *f, bool verbose=false) {
   RootWContent* myContent = new RootWContent(content_name); 
   
   TCanvas* myCanvas = new TCanvas(); 
+
+  int ww = 850; 
+  int wh = 600; 
   
   char* t_name; 
   // ---------------------------------------------------------
@@ -833,7 +841,7 @@ RootWContent* procEfficiency(string base_name, TFile *f, bool verbose=false) {
 
   myCanvas->cd();
   EUFitEff->Draw("DetectionEff_DUTId4");
-  RootWImage*  DetectionEff_DUTId4_img = new RootWImage(myCanvas, 600, 600);
+  RootWImage*  DetectionEff_DUTId4_img = new RootWImage(myCanvas, ww, wh);
   myContent->addItem(DetectionEff_DUTId4_img);
 
   return myContent; 
