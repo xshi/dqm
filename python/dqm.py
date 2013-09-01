@@ -166,6 +166,31 @@ def eut_dqm(run, force=False):
     touch_file(run, '.end_eut_dqm')
 
 
+def eut_track(args):
+    run = args[0]
+    env_file = get_env_file(run)
+    procenv = source_bash(env_file)
+    procdir = procenv['simplesub']
+
+    modes = ['prealign', 'tracks_noalign']
+
+    check_raw_file(procdir, run)
+    touch_file(run, '.begin_eut_track')
+
+    for mode in modes:
+        sys.stdout.write('[eut_dqm] %s run %s ... ' %  (mode, run))
+        sys.stdout.flush()
+        
+        cmd = 'python config-cmspixel.py -a %s %s ' % (mode, run)
+        print cmd 
+
+        output = proc_cmd(cmd, procdir=procdir, env=procenv)
+        print output 
+        sys.stdout.write('OK.\n')
+
+    touch_file(run, '.end_eut_track')
+
+
 def chk_dat(run, force=False): 
     decoder = Decoder()
     decoder.setNumROCs(8)
