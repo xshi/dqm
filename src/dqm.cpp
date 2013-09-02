@@ -262,9 +262,25 @@ int main(int argc, char** argv) {
   
   if ( boost::filesystem::exists( datafile_ful ) ) { 
     RootWContent* myContent5_ful = new RootWContent("Full Data Integrity Check");
-    string destinationFilename = "test.txt"; 
+    string destinationFilename = "check_data_integrity.txt"; 
     
-    RootWBinaryFile* myBinaryFile = new RootWBinaryFile(destinationFilename, "The full data integrity check ", datafile_ful);
+    ifstream infile;
+    infile.open(datafile_ful.c_str()); 
+      
+    std::string s;
+    int nline = 0; 
+    while (std::getline(infile, s))
+      {
+	nline ++; 
+	myContent5_ful->addParagraph(s);
+	
+	if (nline > 100) {
+	  myContent5_ful->addParagraph("\n\nExceeding 100 lines limit!!!");
+	  break; 
+	}
+      }
+ 
+    RootWBinaryFile* myBinaryFile = new RootWBinaryFile(destinationFilename, "The original file link: ", datafile_ful);
     myContent5_ful->addItem(myBinaryFile);
 
     myPage5->addContent(myContent5_ful); 
