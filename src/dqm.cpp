@@ -222,9 +222,8 @@ int main(int argc, char** argv) {
   // ---------------------------------------------------------
   // 5. Making Check Data Integrity page  
   // ---------------------------------------------------------
-  string datafile = string(data_dir) + string("/") + 
-    // string("check_data_integrity.txt");
-    string("chk_dat.txt");
+  string datafile = string(data_dir) + string("/") + string("chk_dat.txt");
+
 
   RootWPage* myPage5; 
   bool f5 = boost::filesystem::exists( datafile ); 
@@ -254,6 +253,23 @@ int main(int argc, char** argv) {
       
       myPage5->addContent(myContent5 );
     }
+
+  // make the full data_check file link 
+  
+  
+  string datafile_ful = string(data_dir) + string("/") + 
+    string("check_data_integrity.txt");
+  
+  if ( boost::filesystem::exists( datafile_ful ) ) { 
+    RootWContent* myContent5_ful = new RootWContent("Full Data Integrity Check");
+    string destinationFilename = "test.txt"; 
+    
+    RootWBinaryFile* myBinaryFile = new RootWBinaryFile(destinationFilename, "The full data integrity check ", datafile_ful);
+    myContent5_ful->addItem(myBinaryFile);
+
+    myPage5->addContent(myContent5_ful); 
+  }
+
   // ---------------------------------------------------------
   // Adding all pages
   // ---------------------------------------------------------
