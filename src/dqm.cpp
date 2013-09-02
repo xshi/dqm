@@ -59,7 +59,11 @@ int main(int argc, char** argv) {
   TFile *f = new TFile(clusters_file);  
   
   // TFile *f2 = new TFile(tracks_file);
-  TFile *f2 = TFile::Open(tracks_noalign_file);
+  TFile *f2;
+  bool f2_exists = boost::filesystem::exists( tracks_noalign_file.Data() ); 
+  if ( f2_exists ) {
+       f2 = TFile::Open(tracks_noalign_file);
+  }
 
 //   if (f2->IsZombie()) {
 //     // cout << "Error opening file: " << tracks_file << endl;
@@ -152,9 +156,9 @@ int main(int argc, char** argv) {
   // ---------------------------------------------------------
   // 2. Making on-tracks clusters page  
   // ---------------------------------------------------------
-  RootWPage* myPage2; 
+  RootWPage* myPage2 = NULL; 
 
-  if (f2) {
+  if (f2_exists) {
     string page_name2 = "on track cluster"; 
     // RootWPage* myPage2 = new RootWPage(page_name2); 
     myPage2 = new RootWPage(page_name2); 
@@ -177,9 +181,9 @@ int main(int argc, char** argv) {
   // ---------------------------------------------------------
   // 3. Making tracking page  
   // ---------------------------------------------------------
-  RootWPage* myPage3; 
+  RootWPage* myPage3= NULL ; 
 
-  if (f2) {
+  if (f2_exists) {
   string page_name3 = "tracking"; 
   myPage3 = new RootWPage(page_name3); 
   myPage3->setAddress("three.html");
@@ -203,7 +207,7 @@ int main(int argc, char** argv) {
   RootWPage* myPage4 = NULL; 
   base_name = "MyEUTelFitTuple"; 
 
-  if (f2) {
+  if (f2_exists) {
     myContent = procEfficiency(base_name, f2);
     if (myContent != NULL) {
       
@@ -225,7 +229,7 @@ int main(int argc, char** argv) {
   string datafile = string(data_dir) + string("/") + string("chk_dat.txt");
 
 
-  RootWPage* myPage5; 
+  RootWPage* myPage5 = NULL ; 
   bool f5 = boost::filesystem::exists( datafile ); 
   if (f5) {
       string page_name5 = "data integrity"; 
@@ -291,17 +295,16 @@ int main(int argc, char** argv) {
   // ---------------------------------------------------------
 
   mySite->addPage(myPage);
-  
-  if (f2) {
+ 
+  if ( myPage2 != NULL)   
     mySite->addPage(myPage2);
+  if ( myPage3 != NULL)
     mySite->addPage(myPage3);
-    if (myPage4 != NULL) 
-      mySite->addPage(myPage4);
-  }
-  
-  if (f5) {
+  if (myPage4 != NULL) 
+    mySite->addPage(myPage4);
+  if (myPage5 != NULL)
     mySite->addPage(myPage5);
-  }
+
 
   std::string targetDirectory = string(getenv(TARGETDIRECTORY));
   if (targetDirectory=="") {
@@ -328,7 +331,7 @@ int main(int argc, char** argv) {
        
   f->Close();
   
-  if (f2)
+  if (f2_exists)
     f2->Close();
 
   // if (f2_alt) f2_alt->Close();
