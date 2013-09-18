@@ -12,7 +12,8 @@ import os
 import shutil
 import subprocess
 import filecmp
-import time 
+import time     
+import HTML
 from datetime import datetime, timedelta 
 import dqm
 
@@ -309,6 +310,57 @@ def status(args):
     if end_runs:
         print 'End runs:\n', ','.join(end_runs)
  
+def index(args): 
+    runs = get_valid_runs()
+    tags = ['eut_dqm', 'chk_dat', 'eut_ful', 'chk_data_integrity']
+
+    #runs = ['020382', '020383', '020384']
+    #tags = ['eut_dqm']
+
+    run_status = { } 
+    for run in runs:
+        run_status[run] = {} 
+        for tag in tags: 
+            if ( run_contains_file(run, '.begin_%s' %tag) and 
+                 not run_contains_file(run, '.end_%s' %tag) ):
+                run_status[run][tag] = 'started'
+            elif ( run_contains_file(run, '.begin_%s' %tag) and 
+                 run_contains_file(run, '.end_%s' %tag)) :
+                run_status[run][tag] = 'done'
+            elif ( not run_contains_file(run, '.begin_%s' %tag) and 
+                 run_contains_file(run, '.end_%s' %tag) ):
+                run_status[run][tag] = 'error'
+            else:
+                run_status[run][tag] = 'unknown'
+
+    status_colors = {
+        'started': 'aqua',
+        'done':  'green',
+        'error': 'red',
+        'unknown': 'white',
+    }
+
+    header_row = ['Run']
+    header_row.extend(tags)
+    t = HTML.Table(header_row=header_row)
+    for run in sorted(run_status):
+        row = [run]
+        for tag in tags: 
+            color = status_colors[run_status[run][tag]]
+            colored_result = HTML.TableCell(run_status[run][tag], bgcolor=color)
+            row.append(colored_result)
+        t.rows.append(row)
+    
+    htmlcode = str(t)
+
+    index = '/var/www/html/pixel_dev/dqm/psi2013/a.html'
+    fo = open(index, 'w')
+    fo.write(htmlcode)
+    fo.close()
+
+
+   
+
 def reset(args):
     if len(args) != 1 : 
         sys.stdout.write('Please give the run range! \n')
