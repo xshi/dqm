@@ -311,11 +311,11 @@ def status(args):
         print 'End runs:\n', ','.join(end_runs)
  
 def index(args): 
-    runs = get_valid_runs()
-    tags = ['eut_dqm', 'chk_dat', 'eut_ful', 'chk_data_integrity']
+    #runs = get_valid_runs()
+    #tags = ['eut_dqm', 'chk_dat', 'eut_ful', 'chk_data_integrity']
 
-    #runs = ['020382', '020383', '020384']
-    #tags = ['eut_dqm']
+    runs = ['020382', '020383', '020384']
+    tags = ['eut_dqm']
 
     run_status = { } 
     for run in runs:
@@ -344,7 +344,9 @@ def index(args):
     header_row.extend(tags)
     t = HTML.Table(header_row=header_row)
     for run in sorted(run_status):
-        row = [run]
+        run_link = HTML.link(run, 'data_%s' %run)
+        row = [run_link]
+
         for tag in tags: 
             color = status_colors[run_status[run][tag]]
             colored_result = HTML.TableCell(run_status[run][tag], bgcolor=color)
