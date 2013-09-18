@@ -311,11 +311,11 @@ def status(args):
         print 'End runs:\n', ','.join(end_runs)
  
 def index(args): 
-    #runs = get_valid_runs()
-    #tags = ['eut_dqm', 'chk_dat', 'eut_ful', 'chk_data_integrity']
+    runs = get_valid_runs()
+    tags = ['eut_dqm', 'chk_dat', 'eut_ful', 'chk_data_integrity']
 
-    runs = ['020382', '020383', '020384']
-    tags = ['eut_dqm']
+    #runs = ['020382', '020383', '020384']
+    #tags = ['eut_dqm']
 
     run_status = { } 
     for run in runs:
@@ -355,13 +355,39 @@ def index(args):
     
     htmlcode = str(t)
 
-    index = '/var/www/html/pixel_dev/dqm/psi2013/a.html'
+    html_header = '''<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>Test Beam DQM - clusters</title>
+    <meta name="keywords" content="CERN CMS tracker upgrade" />
+    <meta name="description" content="CMS Tracker upgrade summary page" />
+    <link href=".style/default.css" rel="stylesheet" type="text/css" />
+    <link rel="shortcut icon" type="image/x-icon" href=".style/images/favicon.ico">
+ </head>
+  <body>
+      <div id="header">
+    <h1>
+    <a href="index.html">PSI2013 Test Beam DQM</a>
+    </h1>
+    </div>
+    <div id="content">
+    '''
+
+    html_footer = '''<div id="footer">
+    <p>Page created on %s </p>
+    <p>&copy; <a href="mailto:Xin.Shi@cern.ch"> Xin Shi</a> 2013 </p>
+    </div>
+    </div>
+    </body>
+    </html>''' %  time.strftime("%Y-%m-%d %H:%M:%S GMT", time.gmtime())
+    
+    index = '/var/www/html/pixel_dev/dqm/psi2013/index.html'
     fo = open(index, 'w')
+    fo.write(html_header)
     fo.write(htmlcode)
+    fo.write(html_footer)
     fo.close()
 
-
-   
 
 def reset(args):
     if len(args) != 1 : 
