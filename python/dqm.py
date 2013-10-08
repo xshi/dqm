@@ -36,14 +36,16 @@ dataset = 'PSI2013'
 MAX_MARLIN_JOBS = 3
 
 if dataset == 'PSI2013':
-    daq_pc = 'pixel_dev@pcpixeltb'
-    daqdir = '/home/pixel_dev/PSI2013Data/incoming'
+    env_file = '/afs/cern.ch/work/x/xshi/public/dqm/v2/bash/dqm_env.sh' 
+    daqdir = '/eos/cms/store/cmst3/group/tracktb/PSI2013'
+    eos="/afs/cern.ch/project/eos/installation/0.2.31/bin/eos.select"
     begin_valid_run = 20001
-    end_valid_run = 50001 
+    end_valid_run = 30001 
 
-    datadir = '/home/pixel_dev/PSI2013Data/data'
+    datadir = '/afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/data/PSI2013/'
     dbname = 'run_list.db'
-    dbpath = '/home/pixel_dev/PSI2013Data'
+    dbpath = datadir 
+
 else:
     raise NameError(dataset)
 
@@ -51,7 +53,7 @@ else:
 def main():
     args = sys.argv[1:]
     if len(args) == 0 :
-        return default()
+        return usage()
 
     if ( len(args) == 1 and 
          is_valid_run_str(args[0]) ):
@@ -61,9 +63,41 @@ def main():
     return function(args[1:])
 
 
+def usage():
+    sys.stdout.write('''
+NAME
+    dqm.py (v2)
+
+SYNOPSIS
+    dqm.py default 
+           run the default procedure (eut_dqm, chk_dat, pub_dqm)
+
+    dqm.py 20301
+           only for run 20301
+
+    dqm.py 20301-20350
+           run the range between 20301-20350
+
+    dqm.py status
+           print the status of runs
+
+    dqm.py index 
+           make the index page 
+
+AUTHOR
+    Written by Xin Shi.
+
+REPORTING BUGS
+    Report bugs to <Xin.Shi@cern.ch>.
+
+DATE
+    October 2013 
+
+\n''')
+
+
 def default(arg=None):
     update_db()
-    ln_runs()
     if arg is None:
         runs = get_valid_new_runs()
     else:
@@ -74,14 +108,16 @@ def default(arg=None):
         force = True 
 
     for run in runs:
-       eut_dqm(run, force=force)
-       chk_dat(run, force=force)
-       pub_dqm(run, force=force)
+        cp_dat(run)
+        eut_dqm(run, force=force)
+        sys.exit()
+        chk_dat(run, force=force)
+        pub_dqm(run, force=force)
        
     
 def update_db():
-    cmd = 'ls %s' % daqdir
-
+    #cmd = 'ls %s' % daqdir
+    cmd = '%s ls %s' % (eos, daqdir)
     output = proc_cmd(cmd)
     runs = get_runs_from_ls(output)
 
@@ -93,33 +129,15 @@ def update_db():
     check_update_status(dbfile)
 
 
-def ln_runs():
-    dbfile = check_and_join(dbpath, dbname)
-    db = open(dbfile)
-    runs = json.load(db)
-    db.close()
-
-    local_runs = get_valid_runs()
-    remote_runs = runs.keys()
-    remote_runs.sort()
-
-    new_runs = []
-    for run in remote_runs:
-        if run not in local_runs:
-            new_runs.append(run)
-
-    for run in new_runs:
-        sys.stdout.write('run %s ... ' % run)
-        sys.stdout.flush()
-        rundir = os.path.join(datadir, run)
-        check_and_join(rundir)
-
-        filenames = runs[run]
-        for filename in filenames: 
-            cmd = "ln -sf %s/%s %s/." %(daqdir, filename, rundir)
-            output = proc_cmd(cmd) 
-
-        sys.stdout.write(' OK.\n')
+def cp_dat(run):
+    srcdir = os.path.join(daqdir, run)
+    dstdir = os.path.join(datadir, run)
+    cmd = "mkdir -p %s" % dstdir 
+    proc_cmd(cmd)
+    
+    cmd = '%s cp %s/*.dat %s/' %(eos, srcdir, dstdir)
+    output = proc_cmd(cmd)
+    print output 
 
 
 def eut_dqm(run, force=False):
@@ -147,7 +165,7 @@ def eut_dqm(run, force=False):
         return
  
 
-    env_file = get_env_file(run)
+    #env_file = get_env_file(run)
     procenv = source_bash(env_file)
     procdir = procenv['simplesub']
 
@@ -167,10 +185,9 @@ def eut_dqm(run, force=False):
     touch_file(run, '.end_eut_dqm')
 
 
-
 def eut_cluster(args):
     run = args[0]
-    env_file = get_env_file(run)
+    #env_file = get_env_file(run)
     procenv = source_bash(env_file)
     procdir = procenv['simplesub']
 
@@ -194,7 +211,7 @@ def eut_cluster(args):
 
 def eut_track(args):
     run = args[0]
-    env_file = get_env_file(run)
+    #env_file = get_env_file(run)
     procenv = source_bash(env_file)
     procdir = procenv['simplesub']
 
@@ -258,7 +275,7 @@ def pub_dqm(run, force=False):
     sys.stdout.write('[pub_dqm] run %s ... ' % run)
     sys.stdout.flush()
         
-    env_file = get_env_file(run)
+    #env_file = get_env_file(run)
     procenv = source_bash(env_file)
     procdir = os.path.join(procenv['simplesub'], 'CMSPixel')
     
@@ -739,11 +756,11 @@ def source_bash(f):
     return env 
 
 
-def get_env_file(run):
-    env_file = '/home/pixel_dev/dqm/bash/dqm_env.sh'
-    if run_contains_file_pattern(run, 'TestBoard2'): 
-        env_file = '/home/pixel_dev/dqm/bash/dqm_env_v0.sh'
-    return env_file
+# def get_env_file(run):
+#     env_file = '/home/pixel_dev/dqm/bash/dqm_env.sh'
+#     if run_contains_file_pattern(run, 'TestBoard2'): 
+#         env_file = '/home/pixel_dev/dqm/bash/dqm_env_v0.sh'
+#     return env_file
 
 
 def num_of_process(process_name):
