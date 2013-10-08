@@ -22,7 +22,7 @@ COMPILERFLAGS+=-Werror
 COMP=g++ $(COMPILERFLAGS) $(INCLUDEFLAGS) $(DEFINES)
 
 
-all: dqm dqm_test
+all: dqm 
 	@echo "Full build successful."
 
 #ROOT-related stuff
