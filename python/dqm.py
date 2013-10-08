@@ -56,6 +56,10 @@ def main():
         return usage()
 
     if ( len(args) == 1 and 
+         args[0] == 'default' ):
+        return default()
+
+    if ( len(args) == 1 and 
          is_valid_run_str(args[0]) ):
         return default(args[0])
 
