@@ -78,12 +78,6 @@ SYNOPSIS
     dqm.py 20301-20350
            run the range between 20301-20350
 
-    dqm.py status
-           print the status of runs
-
-    dqm.py index 
-           make the index page 
-
 AUTHOR
     Written by Xin Shi.
 
@@ -113,10 +107,11 @@ def default(arg=None):
         cp_dat(run)
         eut_dqm(run, force=force)
         chk_dat(run, force=force)
-        
         pub_dqm(run, force=force)
        
-    
+    index(arg)
+
+
 def update_db():
     #cmd = 'ls %s' % daqdir
     cmd = '%s ls %s' % (eos, daqdir)
@@ -401,7 +396,10 @@ def index(args):
     </body>
     </html>''' %  time.strftime("%Y-%m-%d %H:%M:%S GMT", time.gmtime())
     
-    index = '/var/www/html/pixel_dev/dqm/psi2013/index.html'
+
+    procenv = source_bash(env_file)
+    targetdir = procenv['TARGETDIRECTORY']
+    index = os.path.join(targetdir, 'index.html')
     fo = open(index, 'w')
     fo.write(html_header)
     fo.write(htmlcode)
