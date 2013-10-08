@@ -87,8 +87,10 @@ SYNOPSIS
 AUTHOR
     Written by Xin Shi.
 
+
 REPORTING BUGS
     Report bugs to <Xin.Shi@cern.ch>.
+
 
 DATE
     October 2013 
@@ -110,8 +112,8 @@ def default(arg=None):
     for run in runs:
         cp_dat(run)
         eut_dqm(run, force=force)
-        sys.exit()
         chk_dat(run, force=force)
+        
         pub_dqm(run, force=force)
        
     
@@ -180,6 +182,7 @@ def eut_dqm(run, force=False):
         
         cmd = 'python config-cmspixel-dqm.py -a %s %s ' % (mode, run)
         output = proc_cmd(cmd, procdir=procdir, env=procenv)
+        print output 
         sys.stdout.write('OK.\n')
 
     touch_file(run, '.end_eut_dqm')
