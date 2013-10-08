@@ -206,7 +206,6 @@ def eut_cluster(args):
     touch_file(run, '.end_eut_cluster')
 
 
-
 def eut_track(args):
     run = args[0]
     #env_file = get_env_file(run)
@@ -272,7 +271,7 @@ def pub_dqm(run, force=False):
         return
     sys.stdout.write('[pub_dqm] run %s ... ' % run)
     sys.stdout.flush()
-        
+
     #env_file = get_env_file(run)
     procenv = source_bash(env_file)
     procdir = os.path.join(procenv['simplesub'], 'CMSPixel')
@@ -325,12 +324,13 @@ def status(args):
     if end_runs:
         print 'End runs:\n', ','.join(end_runs)
  
+
 def index(args): 
+    sys.stdout.write('[make index] ... ')
+    sys.stdout.flush()
+
     runs = get_valid_runs()
     tags = ['eut_dqm', 'chk_dat', 'eut_ful', 'chk_data_integrity']
-
-    #runs = ['020382', '020383', '020384']
-    #tags = ['eut_dqm']
 
     run_status = { } 
     for run in runs:
@@ -405,6 +405,7 @@ def index(args):
     fo.write(htmlcode)
     fo.write(html_footer)
     fo.close()
+    sys.stdout.write(' OK.\n')
 
 
 def reset(args):
