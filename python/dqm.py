@@ -108,7 +108,8 @@ def default(arg=None):
         eut_dqm(run, force=force)
         chk_dat(run, force=force)
         pub_dqm(run, force=force)
-       
+        rm_dat(run)       
+
     index(arg)
 
 
@@ -136,6 +137,16 @@ def cp_dat(run):
     output = proc_cmd(cmd)
     print output 
 
+
+def rm_dat(run):
+    filedir = os.path.join(datadir, run)
+    os.chdir(filedir)
+    for root, dirs, files in os.walk(filedir):
+        for f in files:
+            if '.dat' in f:
+                datfile = f
+                os.remove(datfile)
+                
 
 def eut_dqm(run, force=False):
     if force and ( run_contains_file(run, '.begin_eut_ful') or 
