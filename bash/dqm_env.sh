@@ -1,14 +1,14 @@
 #!/bin/sh 
 export WORKSPACE=`pwd`
-export TB_ANALYSIS=/home/pixel_dev/EUTEL_PIXELTB/TestBeam/Analysis
-export ILCSOFT=${TB_ANALYSIS}/ilcsoft 
+export ILCSOFT=/afs/cern.ch/work/x/xshi/public/ILCSOFT
 cd $ILCSOFT/v01-12/Eutelescope/HEAD/ 
 source build_env.sh 
-export simplesub=$ILCSOFT/v01-12/Eutelescope/HEAD/simplesub/
-cd $simplesub/dqm/ && source setup.sh && cd 
+export dqm=/afs/cern.ch/work/x/xshi/public/dqm/v2/
+export simplesub=$dqm/simplesub/
 cd ${WORKSPACE} 
-export TARGETDIRECTORY=/var/www/html/pixel_dev/dqm/psi2013
 
+export PATH=$dqm/bin:$PATH
+export TARGETDIRECTORY=/afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/www/dqm/psi2013
 
 export PXLTB_ROOT=/home/pixel_dev/cmspxltb/trunk
 
