@@ -37,7 +37,7 @@ MAX_MARLIN_JOBS = 3
 
 if dataset == 'PSI2013':
     env_file = '/afs/cern.ch/work/x/xshi/public/dqm/v2/bash/dqm_env.sh' 
-    daqdir = '/eos/cms/store/cmst3/group/tracktb/PSI2013'
+    daqdir = '/eos/cms/store/cmst3/group/tracktb/PSI2013/020301'
     eos="/afs/cern.ch/project/eos/installation/0.2.31/bin/eos.select"
     begin_valid_run = 20001
     end_valid_run = 30001 
@@ -72,6 +72,7 @@ def usage():
 NAME
     dqm.py (v2)
 
+
 SYNOPSIS
     dqm.py default 
            run the default procedure (eut_dqm, chk_dat, pub_dqm)
@@ -81,6 +82,7 @@ SYNOPSIS
 
     dqm.py 20301-20350
            run the range between 20301-20350
+
 
 AUTHOR
     Written by Xin Shi.
@@ -132,11 +134,10 @@ def update_db():
 
 
 def cp_dat(run):
-    srcdir = os.path.join(daqdir, run)
+    srcdir = daqdir 
     dstdir = os.path.join(datadir, run)
     cmd = "mkdir -p %s" % dstdir 
     proc_cmd(cmd)
-    
     cmd = '%s cp %s/*.dat %s/' %(eos, srcdir, dstdir)
     output = proc_cmd(cmd)
     print output 
@@ -605,7 +606,21 @@ def get_valid_runs():
 
 
 def get_valid_new_runs():
-    runs = get_valid_runs()
+    dbfile = check_and_join(dbpath, dbname)
+    db = open(dbfile)
+    runs = json.load(db)
+    db.close()
+
+    local_runs = get_valid_runs()
+    remote_runs = runs.keys()
+    remote_runs.sort()
+
+    runs = []
+    for run in remote_runs:
+        if run not in local_runs:
+            runs.append(run)
+
+    #runs = get_valid_runs()
     new_runs = []
 
     fnames = [ '.begin_eut_dqm', '.end_eut_dqm', 
@@ -635,8 +650,8 @@ def get_runs_from_ls(output):
         spill = items[2]            
 
         file = line
-        if not is_stable_file(file):
-            continue
+        #if not is_stable_file(file):
+        #    continue
 
         run = spill.zfill(6)
         if not run.isdigit():
