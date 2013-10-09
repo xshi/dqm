@@ -31,18 +31,20 @@ sys.path.append('/home/pixel_dev/cmspxltb/trunk/pycohal')
 from Decoder_dqm import Decoder 
 
 
-dataset = 'PSI2013'
+dataset = 'FNAL2013'
+debug = False 
+#debug = True 
 
 MAX_MARLIN_JOBS = 3
 
-if dataset == 'PSI2013':
+if dataset == 'FNAL2013':
     env_file = '/afs/cern.ch/work/x/xshi/public/dqm/v2/bash/dqm_env.sh' 
-    daqdir = '/eos/cms/store/cmst3/group/tracktb/PSI2013/020301'
+    daqdir = '/eos/cms/store/cmst3/group/tracktb/FNAL2013'
     eos="/afs/cern.ch/project/eos/installation/0.2.31/bin/eos.select"
     begin_valid_run = 20001
-    end_valid_run = 30001 
+    end_valid_run = 50001 
 
-    datadir = '/afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/data/PSI2013/'
+    datadir = '/afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/data/FNAL2013/'
     dbname = 'run_list.db'
     dbpath = datadir 
 
@@ -134,24 +136,28 @@ def update_db():
 
 
 def cp_dat(run):
-    srcdir = daqdir 
     dstdir = os.path.join(datadir, run)
     cmd = "mkdir -p %s" % dstdir 
     proc_cmd(cmd)
-    cmd = '%s cp %s/*.dat %s/' %(eos, srcdir, dstdir)
+    datfile = get_datfile(run)
+    cmd = '%s cp %s/%s %s/' %(eos, daqdir, datfile, dstdir)
     output = proc_cmd(cmd)
-    print output 
+    if debug:
+        print cmd 
+        print output 
 
 
 def rm_dat(run):
     filedir = os.path.join(datadir, run)
+    cwd = os.getcwd()
     os.chdir(filedir)
     for root, dirs, files in os.walk(filedir):
         for f in files:
             if '.dat' in f:
                 datfile = f
                 os.remove(datfile)
-                
+    os.chdir(cwd)
+
 
 def eut_dqm(run, force=False):
     if force and ( run_contains_file(run, '.begin_eut_ful') or 
@@ -193,7 +199,8 @@ def eut_dqm(run, force=False):
         
         cmd = 'python config-cmspixel-dqm.py -a %s %s ' % (mode, run)
         output = proc_cmd(cmd, procdir=procdir, env=procenv)
-        print output 
+        if debug:
+            print output 
         sys.stdout.write('OK.\n')
 
     touch_file(run, '.end_eut_dqm')
@@ -216,7 +223,8 @@ def eut_cluster(args):
         
         cmd = 'python config-cmspixel.py -a %s %s ' % (mode, run)
         output = proc_cmd(cmd, procdir=procdir, env=procenv)
-        print output 
+        if debug:
+            print output 
         sys.stdout.write('OK.\n')
 
     touch_file(run, '.end_eut_cluster')
@@ -239,7 +247,8 @@ def eut_track(args):
         
         cmd = 'python config-cmspixel.py -a %s %s ' % (mode, run)
         output = proc_cmd(cmd, procdir=procdir, env=procenv)
-        print output 
+        if debug:
+            print output 
         sys.stdout.write('OK.\n')
 
     touch_file(run, '.end_eut_track')
@@ -398,11 +407,11 @@ def index(args):
   <body>
       <div id="header">
     <h1>
-    <a href="index.html">PSI2013 Test Beam DQM</a>
+    <a href="index.html">%s Test Beam DQM</a>
     </h1>
     </div>
     <div id="content">
-    '''
+    ''' % dataset 
 
     html_footer = '''<div id="footer">
     <p>Page created on %s </p>
@@ -801,6 +810,17 @@ def num_of_process(process_name):
     stdout = proc.communicate()[0]
     num = len( stdout.split())
     return num 
+
+
+def get_datfile(run): 
+    cmd = '%s ls %s' % (eos, daqdir)
+    output = proc_cmd(cmd)
+    keyword = '_%s_' % run.lstrip('0') 
+    for line in output.split():
+        if keyword in line:
+            datfile = line
+
+    return datfile
 
 
 if __name__ == '__main__':
