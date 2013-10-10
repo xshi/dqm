@@ -8,7 +8,7 @@ export simplesub=$dqm/simplesub/
 cd ${WORKSPACE} 
 
 export PATH=$dqm/bin:$PATH
-export TARGETDIRECTORY=/afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/www/dqm/psi2013
+export TARGETDIRECTORY=/afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/www/dqm/fnal2013
 
 export PXLTB_ROOT=/home/pixel_dev/cmspxltb/trunk
 
