@@ -130,8 +130,8 @@ private:
   RootWImageSize makeSizeCode(int sw, int sh, int lw, int lh);
   vector<string> fileTypeV_;
 
-  // static const double thumb_compression_ = 2.;
-  static const constexpr double thumb_compression_ = 2.; // c++11 
+  static const double thumb_compression_ = 2.;
+  // static const constexpr double thumb_compression_ = 2.; // c++11 
 
   string allowedExtensions_; // Will be initialized in the constructor
   void setDefaultExtensions();
