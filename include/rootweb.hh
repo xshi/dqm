@@ -1,8 +1,10 @@
 #ifndef _ROOTWEB_HH_
 #define _ROOTWEB_HH_
 
-#include <boost/filesystem/exception.hpp>
-#include <boost/filesystem/operations.hpp>
+//#include <boost/filesystem/exception.hpp>
+//#include <boost/filesystem/operations.hpp>
+
+#include <boost/filesystem.hpp>
 #include <fstream>
 #include <iomanip>
 #include <iostream>

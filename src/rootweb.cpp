@@ -2,6 +2,7 @@
 // Author:  Stefano Mersi <Stefano.Mersi@cern.ch>
 // -----------------------------------------------------------
 #include <rootweb.hh>
+#include <algorithm>
 
 int RootWImage::imageCounter_ = 0;
 std::map <std::string, int> RootWImage::imageNameCounter_;
@@ -982,14 +983,20 @@ ostream& RootWBinaryFile::dump(ostream& output) {
   string destinationFileName = targetDirectory_ +"/" + fileName_;
 
   if (boost::filesystem::exists(originalFileName_) && originalFileName_ != destinationFileName) { // CUIDADO: naive control on copy on itself. it only matches the strings, not taking into account relative paths and symlinks
-    try {
-      if (boost::filesystem::exists(destinationFileName))
-	boost::filesystem::remove(destinationFileName);
-      boost::filesystem::copy_file(originalFileName_, destinationFileName);
-    } catch (boost::filesystem::filesystem_error e) {
-      cerr << e.what() << endl;
-      return output;
-    }
+
+    // try {
+    //   if (boost::filesystem::exists(destinationFileName))
+    // 	boost::filesystem::remove(destinationFileName);
+    //   boost::filesystem::copy_file(originalFileName_, destinationFileName);
+    // } catch (boost::filesystem::filesystem_error e) {
+    //   cerr << e.what() << endl;
+    //   return output;
+    // }
+
+    if (boost::filesystem::exists(destinationFileName))
+      boost::filesystem::remove(destinationFileName);
+    boost::filesystem::copy_file(originalFileName_, destinationFileName);
+
   }
 
   output << "<b>" << description_ << ":</b> <a href=\""

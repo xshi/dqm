@@ -3,7 +3,7 @@ ROOTLIBDIR=`root-config --libdir`
 ROOTLIBFLAGS=`root-config --libs`
 ROOTLIBFLAGS+=-lHistPainter
 #BOOSTLIBFLAGS=-L/usr/lib64/boost141
-BOOSTLIBFLAGS=-L/usr/lib64/boost
+BOOSTLIBFLAGS=-L/usr/lib64/
 BOOSTLIBFLAGS+=-lboost_system -lboost_filesystem -lboost_regex -lboost_program_options
 GEOMLIBFLAG=-lGeom
 GLIBFLAGS=`root-config --glibs`
@@ -30,7 +30,7 @@ all: dqm
 #ROOT-related stuff
 $(LIBDIR)/rootweb.o: $(SRCDIR)/rootweb.cpp $(INCDIR)/rootweb.hh
 	mkdir -p $(LIBDIR)	
-	$(COMP) $(ROOTFLAGS) -c -o $(LIBDIR)/rootweb.o $(SRCDIR)/rootweb.cpp
+	$(COMP) $(ROOTFLAGS) $(BOOSTLIBFLAGS) -c -o $(LIBDIR)/rootweb.o $(SRCDIR)/rootweb.cpp
 
 dqm: $(BINDIR)/dqm
 $(BINDIR)/dqm: $(SRCDIR)/dqm.cpp $(LIBDIR)/rootweb.o 
