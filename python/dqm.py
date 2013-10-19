@@ -27,9 +27,7 @@ try:
 except ImportError:
     import simplejson as json
 
-#sys.path.append('/home/pixel_dev/cmspxltb/trunk/pycohal')
 from Decoder_dqm import Decoder 
-
 
 dataset = 'FNAL2013'
 #debug = False 
@@ -47,6 +45,7 @@ if dataset == 'FNAL2013':
     datadir = '/afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/data/FNAL2013/'
     dbname = 'run_list.db'
     dbpath = datadir 
+    histdir = '/afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/jobsub/v1/histograms'
 
 else:
     raise NameError(dataset)
@@ -112,11 +111,11 @@ def default(arg=None):
         force = True 
 
     for run in runs:
-        cp_dat(run)
+        #cp_dat(run)
         eut_dqm(run, force=force)
-        chk_dat(run, force=force)
-        pub_dqm(run, force=force)
-        rm_dat(run)       
+        #chk_dat(run, force=force)
+        #pub_dqm(run, force=force)
+        #rm_dat(run)       
 
     index(arg)
 
@@ -196,8 +195,10 @@ def eut_dqm(run, force=False):
     modes = ["convert", "clustering", "hitmaker"]        
 
     run = str(run).zfill(6) 
-    check_raw_file(procdir, run)
+    datfile = check_raw_file(procdir, run)
     touch_file(run, '.begin_eut_dqm')
+
+    board = datfile.split('_')[0]
 
     for mode in modes:
         sys.stdout.write('[eut_dqm] %s run %s ... ' %  (mode, run))
@@ -208,6 +209,7 @@ def eut_dqm(run, force=False):
         if debug:
             print output 
 
+        copy_histos(board, run)
         sys.stdout.write('OK.\n')
 
     touch_file(run, '.end_eut_dqm')
@@ -719,14 +721,16 @@ def check_raw_file(procdir, run):
     os.chdir(filedir)
     for root, dirs, files in os.walk(filedir):
         if 'mtb.bin' in files:
-            return 
+            os.remove('mtb.bin')
 
         for f in files:
             if '.dat' in f:
+                #filesize = get_filesize(root, f)
                 datfile = f
                 os.symlink(datfile, 'mtb.bin')
                 
     os.chdir(cwd)
+    return datfile 
 
 
 def get_runs_from_file(filename): 
@@ -860,6 +864,24 @@ def get_rundir(run):
     rundir = os.path.join(datadir, str(run).zfill(6))
     return rundir
 
+def get_filesize(root, f):
+    print root
+    sys.exit()
+    cmd = '%s ls -l %s/%s' % (eos, root, f)
+    output = proc_cmd(cmd)
+    print output
+
+
+def copy_histos(board, run):
+    subdir = '%s/%s' %(board, run)
+    filepath = os.path.join(histdir, board, run)
+
+    if not os.access(filepath, os.F_OK):
+        os.makedirs(filepath)
+
+    cmd = 'cp %s/%s-clustering.root %s' %(histdir, run, filepath)
+    proc_cmd(cmd)
+        
 
 if __name__ == '__main__':
     main()
