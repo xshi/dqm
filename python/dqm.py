@@ -112,9 +112,9 @@ def default(arg=None):
         force = True 
 
     for run in runs:
-        cp_dat(run)
-        sys.exit()
+        #cp_dat(run)
         eut_dqm(run, force=force)
+        sys.exit()
         chk_dat(run, force=force)
         pub_dqm(run, force=force)
         rm_dat(run)       
@@ -137,7 +137,8 @@ def update_db():
 
 
 def cp_dat(run):
-    dstdir = os.path.join(datadir, str(run).zfill(6))
+    dstdir = get_rundir(run) 
+
     cmd = "mkdir -p %s" % dstdir 
     proc_cmd(cmd)
     datfile = get_datfile(run)
@@ -189,9 +190,9 @@ def eut_dqm(run, force=False):
 
     #env_file = get_env_file(run)
     procenv = source_bash(env_file)
-    procdir = procenv['simplesub']
+    procdir = procenv['jobsub']
 
-    modes = ["fullconvert", "clustering", "hits"]        
+    modes = ["convert", "clustering", "hitmaker"]        
 
     check_raw_file(procdir, run)
     touch_file(run, '.begin_eut_dqm')
@@ -200,7 +201,10 @@ def eut_dqm(run, force=False):
         sys.stdout.write('[eut_dqm] %s run %s ... ' %  (mode, run))
         sys.stdout.flush()
         
-        cmd = 'python config-cmspixel-dqm.py -a %s %s ' % (mode, run)
+        cmd = 'jobsub -c dqm.cfg %s %s ' % (mode, run)
+        print cmd
+
+        sys.exit()
         output = proc_cmd(cmd, procdir=procdir, env=procenv)
         if debug:
             print output 
@@ -780,14 +784,15 @@ def touch_file(run, fname):
     
 
 def run_contains_file(run, f):
-    rundir = os.path.join(datadir, run)
+    rundir = get_rundir(run)
     for root, dirs, files in os.walk(rundir):
         if f in files:
             return True
     return False
      
 def run_contains_file_pattern(run, pat):
-    rundir = os.path.join(datadir, run)
+    rundir = get_rundir(run)
+
     for root, dirs, files in os.walk(rundir):
         for f in files:
             if pat in f:
@@ -795,11 +800,19 @@ def run_contains_file_pattern(run, pat):
     return False
 
 
+
 def source_bash(f):
     pipe = subprocess.Popen(". %s; env" % f, stdout=subprocess.PIPE,
                             shell=True)
     output = pipe.communicate()[0]
-    env = dict((line.split("=", 1) for line in output.splitlines()))
+    #env = dict((line.split("=", 1) for line in output.splitlines()))
+    env = {}
+    for line in output.splitlines():
+        items = line.split("=", 1) 
+        if len(items) < 2:
+            continue 
+
+        env[items[0]]= items[1]
     return env 
 
 
@@ -829,6 +842,11 @@ def get_datfile(run):
             datfile.append(line)
 
     return datfile
+
+
+def get_rundir(run):
+    rundir = os.path.join(datadir, str(run).zfill(6))
+    return rundir
 
 
 if __name__ == '__main__':
