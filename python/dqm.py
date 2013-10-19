@@ -113,6 +113,7 @@ def default(arg=None):
 
     for run in runs:
         cp_dat(run)
+        sys.exit()
         eut_dqm(run, force=force)
         chk_dat(run, force=force)
         pub_dqm(run, force=force)
@@ -138,19 +139,15 @@ def update_db():
 def cp_dat(run):
     dstdir = os.path.join(datadir, str(run).zfill(6))
     cmd = "mkdir -p %s" % dstdir 
-    #proc_cmd(cmd)
+    proc_cmd(cmd)
     datfile = get_datfile(run)
-    
-    print datfile
 
-    sys.exit()
-    cmd = '%s cp %s/%s %s/' %(eos, daqdir, datfile, dstdir)
-
-
-    output = proc_cmd(cmd)
-    if debug:
-        print cmd 
-        print output 
+    for df in datfile:
+        cmd = '%s cp %s/%s/%s %s/' %(eos, daqdir, run, df, dstdir)
+        output = proc_cmd(cmd)
+        if debug:
+            print cmd 
+            print output 
 
 
 def rm_dat(run):
