@@ -27,21 +27,21 @@ try:
 except ImportError:
     import simplejson as json
 
-sys.path.append('/home/pixel_dev/cmspxltb/trunk/pycohal')
+#sys.path.append('/home/pixel_dev/cmspxltb/trunk/pycohal')
 from Decoder_dqm import Decoder 
 
 
 dataset = 'FNAL2013'
-debug = False 
-#debug = True 
+#debug = False 
+debug = True 
 
 MAX_MARLIN_JOBS = 3
 
 if dataset == 'FNAL2013':
-    env_file = '/afs/cern.ch/work/x/xshi/public/dqm/v2/bash/dqm_env.sh' 
+    env_file = '/afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/dqm/v3/setup.sh' 
     daqdir = '/eos/cms/store/cmst3/group/tracktb/FNAL2013'
     eos="/afs/cern.ch/project/eos/installation/0.2.31/bin/eos.select"
-    begin_valid_run = 20001
+    begin_valid_run = 30001
     end_valid_run = 50001 
 
     datadir = '/afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/data/FNAL2013/'
@@ -72,18 +72,18 @@ def main():
 def usage():
     sys.stdout.write('''
 NAME
-    dqm.py (v2)
+    dqm.py (v3) 
 
 
 SYNOPSIS
     dqm.py default 
            run the default procedure (eut_dqm, chk_dat, pub_dqm)
 
-    dqm.py 20301
+    dqm.py 30301
            only for run 20301
 
-    dqm.py 20301-20350
-           run the range between 20301-20350
+    dqm.py 30301-30350
+           run the range between 30301-30350
 
 
 AUTHOR
@@ -122,11 +122,12 @@ def default(arg=None):
 
 
 def update_db():
-    #cmd = 'ls %s' % daqdir
     cmd = '%s ls %s' % (eos, daqdir)
     output = proc_cmd(cmd)
+    
     runs = get_runs_from_ls(output)
-
+    print runs 
+    sys.exit()
     dbfile = check_and_join(dbpath, dbname)    
     db = open(dbfile, 'w')
     json.dump(runs, db)
@@ -649,34 +650,37 @@ def get_valid_new_runs():
             
 
 def get_runs_from_ls(output):
-    runs = {}
+    runs = []
     for line in output.split():
-        items = line.split('_')
-        if len(items) < 3:
+        if len(line) > 6: # skip non-valid run and files. 
             continue
 
-        board = items[0]
-        spill = items[2]            
+        # print line.zfill(6) 
+        # items = line.split('_')
+        # print items
 
-        file = line
-        #if not is_stable_file(file):
-        #    continue
+        # sys.exit()
+        # if len(items) < 3:
+        #     continue
 
-        run = spill.zfill(6)
+        # board = items[0]
+        # spill = items[2]            
+
+        # file = line
+        # #if not is_stable_file(file):
+        # #    continue
+
+        run = line.zfill(6)
         if not run.isdigit():
             continue
         
-        if int(run) < begin_valid_run or int(run) > end_valid_run:
+        run = int(run) 
+
+        if run < begin_valid_run or run > end_valid_run:
             continue
- 
-        if not runs.has_key(run):
-            runs[run] = [file]
-        else:
-            existing_files = runs[run]
-            for ef in existing_files:
-                eb = ef.split('_')[0]
-                if eb != board:
-                    runs[run].append(file)
+
+        if run not in runs:
+            runs.append(run)
 
     return runs
 
