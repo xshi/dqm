@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
   // Get the root files 
   // ---------------------------------------------------------
   
-  TString clusters_file = data_dir + "/" + run_number + "-clusters.root";
+  TString clusters_file = data_dir + "/" + run_number + "-clustering.root";
   // TString tracks_file = data_dir + "/" + run_number + "-tracks.root";
   TString tracks_noalign_file = data_dir + "/" + run_number + "-tracks_noalign.root";
   
