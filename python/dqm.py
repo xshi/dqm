@@ -114,8 +114,8 @@ def default(arg=None):
     for run in runs:
         #cp_dat(run)
         eut_dqm(run, force=force)
-        sys.exit()
         chk_dat(run, force=force)
+        sys.exit()
         pub_dqm(run, force=force)
         rm_dat(run)       
 
@@ -194,6 +194,7 @@ def eut_dqm(run, force=False):
 
     modes = ["convert", "clustering", "hitmaker"]        
 
+    run = str(run).zfill(6) 
     check_raw_file(procdir, run)
     touch_file(run, '.begin_eut_dqm')
 
@@ -202,9 +203,6 @@ def eut_dqm(run, force=False):
         sys.stdout.flush()
         
         cmd = 'jobsub -c dqm.cfg %s %s ' % (mode, run)
-        print cmd
-
-        sys.exit()
         output = proc_cmd(cmd, procdir=procdir, env=procenv)
         if debug:
             print output 
@@ -702,7 +700,7 @@ def is_stable_file(filename):
 
 
 def check_raw_file(procdir, run):
-    filedir = os.path.join(procdir, 'CMSPixel/data', run)
+    filedir = os.path.join(procdir, 'data/cmspixel', run)
     cwd = os.getcwd()
     os.chdir(filedir)
     for root, dirs, files in os.walk(filedir):
