@@ -111,13 +111,13 @@ def default(arg=None):
         force = True 
 
     for run in runs:
-        #cp_dat(run)
-        eut_dqm(run, force=force)
-        #chk_dat(run, force=force)
-        #pub_dqm(run, force=force)
-        #rm_dat(run)       
+        cp_dat(run)
+        board = eut_dqm(run, force=force)
+        chk_dat(board, run, force=force)
+        pub_dqm(board, run, force=force)
+        rm_dat(run)       
 
-    index(arg)
+    index(board)
 
 
 def update_db():
@@ -213,6 +213,7 @@ def eut_dqm(run, force=False):
         sys.stdout.write('OK.\n')
 
     touch_file(run, '.end_eut_dqm')
+    return board
 
 
 def eut_cluster(args):
@@ -263,7 +264,7 @@ def eut_track(args):
     touch_file(run, '.end_eut_track')
 
 
-def chk_dat(run, force=False): 
+def chk_dat(board, run, force=False): 
     decoder = Decoder()
     decoder.setNumROCs(8)
 
@@ -273,16 +274,17 @@ def chk_dat(run, force=False):
                        run_contains_file(run, '.end_chk_dat') ):
         return
 
-    if run_contains_file_pattern(run, 'TestBoard2'): 
-        decoder.setROCVersion(0)
-    else:
-        decoder.setROCVersion(1)
+    #if run_contains_file_pattern(run, 'TestBoard2'): 
+    #    decoder.setROCVersion(0)
+    #else:
+    decoder.setROCVersion(1)
 
     sys.stdout.write('[chk_dat] run %s ... ' % run)
     sys.stdout.flush()
 
     filename = os.path.join(datadir, run, 'mtb.bin')
-    outfile = os.path.join(datadir, run, 'chk_dat.txt')
+
+    outfile = os.path.join(histdir, board, run, 'chk_dat.txt')
     orig_stdout = sys.stdout
     f = file(outfile, 'w')
     sys.stdout = f
@@ -298,7 +300,7 @@ def chk_dat(run, force=False):
     touch_file(run, '.end_chk_dat')
 
 
-def pub_dqm(run, force=False):
+def pub_dqm(board, run, force=False):
 
     run = str(run).zfill(6) 
     if not force and ( run_contains_file(run, '.begin_pub_dqm') or
@@ -313,14 +315,13 @@ def pub_dqm(run, force=False):
     #env_file = get_env_file(run)
     procenv = source_bash(env_file)
     #procdir = os.path.join(procenv['simplesub'], 'CMSPixel')
-    procdir = '/afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/data/'
+    #procdir = '/afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/data/'
 
-    cmd = 'dqm FNAL2013/%s' %run
+    cmd = 'dqm %s/%s' %(board, run)
+
     touch_file(run, '.begin_pub_dqm')
 
-    #print cmd, procdir 
-
-    output = proc_cmd(cmd, procdir=procdir, env=procenv)
+    output = proc_cmd(cmd, procdir=histdir, env=procenv)
     sys.stdout.write(' OK.\n')
     touch_file(run, '.end_pub_dqm')
 
@@ -367,7 +368,7 @@ def status(args):
         print 'End runs:\n', ','.join(end_runs)
  
 
-def index(args): 
+def index(board): 
     sys.stdout.write('[make index] ... ')
     sys.stdout.flush()
 
@@ -403,7 +404,7 @@ def index(args):
     header_row.extend(tags)
     t = HTML.Table(header_row=header_row)
     for run in sorted(run_status):
-        run_link = HTML.link(run, 'FNAL2013_%s' %run)
+        run_link = HTML.link(run, '%s_%s' %(board, run))
         row = [run_link]
 
         for tag in tags: 
@@ -728,7 +729,8 @@ def check_raw_file(procdir, run):
                 #filesize = get_filesize(root, f)
                 datfile = f
                 os.symlink(datfile, 'mtb.bin')
-                
+                break
+
     os.chdir(cwd)
     return datfile 
 
