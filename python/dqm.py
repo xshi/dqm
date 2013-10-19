@@ -112,12 +112,11 @@ def default(arg=None):
         force = True 
 
     for run in runs:
-        #cp_dat(run)
+        cp_dat(run)
         eut_dqm(run, force=force)
         chk_dat(run, force=force)
-        sys.exit()
         pub_dqm(run, force=force)
-        rm_dat(run)       
+        #rm_dat(run)       
 
     index(arg)
 
@@ -206,6 +205,7 @@ def eut_dqm(run, force=False):
         output = proc_cmd(cmd, procdir=procdir, env=procenv)
         if debug:
             print output 
+
         sys.stdout.write('OK.\n')
 
     touch_file(run, '.end_eut_dqm')
@@ -295,6 +295,8 @@ def chk_dat(run, force=False):
 
 
 def pub_dqm(run, force=False):
+
+    run = str(run).zfill(6) 
     if not force and ( run_contains_file(run, '.begin_pub_dqm') or
                        run_contains_file(run, '.end_pub_dqm') or 
                        not run_contains_file(run, '.end_eut_dqm') or
@@ -306,10 +308,14 @@ def pub_dqm(run, force=False):
 
     #env_file = get_env_file(run)
     procenv = source_bash(env_file)
-    procdir = os.path.join(procenv['simplesub'], 'CMSPixel')
-    
-    cmd = 'dqm data/%s' %run
+    #procdir = os.path.join(procenv['simplesub'], 'CMSPixel')
+    procdir = '/afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/data/'
+
+    cmd = 'dqm FNAL2013/%s' %run
     touch_file(run, '.begin_pub_dqm')
+
+    #print cmd, procdir 
+
     output = proc_cmd(cmd, procdir=procdir, env=procenv)
     sys.stdout.write(' OK.\n')
     touch_file(run, '.end_pub_dqm')
