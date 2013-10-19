@@ -116,7 +116,7 @@ def default(arg=None):
         eut_dqm(run, force=force)
         chk_dat(run, force=force)
         pub_dqm(run, force=force)
-        #rm_dat(run)       
+        rm_dat(run)       
 
     index(arg)
 
@@ -151,7 +151,9 @@ def cp_dat(run):
 
 
 def rm_dat(run):
-    filedir = os.path.join(datadir, run)
+    #filedir = os.path.join(datadir, run)
+    filedir = get_rundir(run)
+
     cwd = os.getcwd()
     os.chdir(filedir)
     for root, dirs, files in os.walk(filedir):
@@ -368,6 +370,8 @@ def index(args):
     sys.stdout.flush()
 
     runs = get_valid_runs()
+
+
     tags = ['eut_dqm', 'chk_dat', 'eut_ful', 'chk_data_integrity']
 
     run_status = { } 
@@ -397,7 +401,7 @@ def index(args):
     header_row.extend(tags)
     t = HTML.Table(header_row=header_row)
     for run in sorted(run_status):
-        run_link = HTML.link(run, 'data_%s' %run)
+        run_link = HTML.link(run, 'FNAL2013_%s' %run)
         row = [run_link]
 
         for tag in tags: 
