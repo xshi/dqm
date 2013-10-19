@@ -638,7 +638,9 @@ def get_valid_new_runs():
     db.close()
 
     local_runs = get_valid_runs()
-    remote_runs = runs.keys()
+    #remote_runs = runs.keys()
+    remote_runs = runs 
+
     remote_runs.sort()
 
     runs = []
