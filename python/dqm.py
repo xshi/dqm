@@ -263,6 +263,8 @@ def chk_dat(run, force=False):
     decoder = Decoder()
     decoder.setNumROCs(8)
 
+    run = str(run).zfill(6) 
+
     if not force and ( run_contains_file(run, '.begin_chk_dat') or 
                        run_contains_file(run, '.end_chk_dat') ):
         return
