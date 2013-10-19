@@ -126,8 +126,7 @@ def update_db():
     output = proc_cmd(cmd)
     
     runs = get_runs_from_ls(output)
-    print runs 
-    sys.exit()
+
     dbfile = check_and_join(dbpath, dbname)    
     db = open(dbfile, 'w')
     json.dump(runs, db)
@@ -137,11 +136,17 @@ def update_db():
 
 
 def cp_dat(run):
-    dstdir = os.path.join(datadir, run)
+    dstdir = os.path.join(datadir, str(run).zfill(6))
     cmd = "mkdir -p %s" % dstdir 
-    proc_cmd(cmd)
+    #proc_cmd(cmd)
     datfile = get_datfile(run)
+    
+    print datfile
+
+    sys.exit()
     cmd = '%s cp %s/%s %s/' %(eos, daqdir, datfile, dstdir)
+
+
     output = proc_cmd(cmd)
     if debug:
         print cmd 
@@ -767,7 +772,7 @@ def get_range_from_str(val, start=0, stop=None):
     else:
         result.append(int(val))
 
-    result = [ str(r).zfill(6) for r in result ]
+    #result = [ str(r).zfill(6) for r in result ]
     result.sort()
     return result
 
@@ -817,12 +822,14 @@ def num_of_process(process_name):
 
 
 def get_datfile(run): 
-    cmd = '%s ls %s' % (eos, daqdir)
+    datfile = []
+    cmd = '%s ls %s/%s' % (eos, daqdir, run)
     output = proc_cmd(cmd)
-    keyword = '_%s_' % run.lstrip('0') 
+    
+    keyword = '.dat'
     for line in output.split():
         if keyword in line:
-            datfile = line
+            datfile.append(line)
 
     return datfile
 
