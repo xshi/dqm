@@ -1,7 +1,7 @@
 #!/bin/sh
 # Usage: 
 # acrontab -e 
-# */5 * * * * /afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/dqm/v3/bash/cron_jobs.sh
+# 0 * * * * lxplus.cern.ch /afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/dqm/v3/bash/cron_jobs.sh
 
 /afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/dqm/v3/python/dqm.py default 
 
