@@ -117,7 +117,7 @@ def default(arg=None):
         pub_dqm(board, run, force=force)
         rm_dat(run)       
 
-    index(board)
+        index(arg)
 
 
 def update_db():
@@ -368,30 +368,37 @@ def status(args):
         print 'End runs:\n', ','.join(end_runs)
  
 
-def index(board): 
+def index(arg): 
     sys.stdout.write('[make index] ... ')
     sys.stdout.flush()
-
-    runs = get_valid_runs()
-
+    procenv = source_bash(env_file)
+    targetdir = procenv['TARGETDIRECTORY']
+    
+    #runs = get_valid_runs()
+    board_runs = get_valid_pub_board_runs()
 
     tags = ['eut_dqm', 'chk_dat', 'eut_ful', 'chk_data_integrity']
 
     run_status = { } 
-    for run in runs:
-        run_status[run] = {} 
+    for board_run in board_runs:
+        board = board_run.split('_')[0]
+        run = board_run.split('_')[1]
+        
+        #print board, run
+
+        run_status[board_run] = {} 
         for tag in tags: 
             if ( run_contains_file(run, '.begin_%s' %tag) and 
                  not run_contains_file(run, '.end_%s' %tag) ):
-                run_status[run][tag] = 'started'
+                run_status[board_run][tag] = 'started'
             elif ( run_contains_file(run, '.begin_%s' %tag) and 
                  run_contains_file(run, '.end_%s' %tag)) :
-                run_status[run][tag] = 'done'
+                run_status[board_run][tag] = 'done'
             elif ( not run_contains_file(run, '.begin_%s' %tag) and 
                  run_contains_file(run, '.end_%s' %tag) ):
-                run_status[run][tag] = 'error'
+                run_status[board_run][tag] = 'error'
             else:
-                run_status[run][tag] = 'unknown'
+                run_status[board_run][tag] = 'unknown'
 
     status_colors = {
         'started': 'aqua',
@@ -403,13 +410,13 @@ def index(board):
     header_row = ['Run']
     header_row.extend(tags)
     t = HTML.Table(header_row=header_row)
-    for run in sorted(run_status):
-        run_link = HTML.link(run, '%s_%s' %(board, run))
+    for board_run in sorted(run_status):
+        run_link = HTML.link(board_run, '%s' %board_run)
         row = [run_link]
 
         for tag in tags: 
-            color = status_colors[run_status[run][tag]]
-            colored_result = HTML.TableCell(run_status[run][tag], bgcolor=color)
+            color = status_colors[run_status[board_run][tag]]
+            colored_result = HTML.TableCell(run_status[board_run][tag], bgcolor=color)
             row.append(colored_result)
         t.rows.append(row)
     
@@ -442,8 +449,8 @@ def index(board):
     </html>''' %  time.strftime("%Y-%m-%d %H:%M:%S GMT", time.gmtime())
     
 
-    procenv = source_bash(env_file)
-    targetdir = procenv['TARGETDIRECTORY']
+
+
     index = os.path.join(targetdir, 'index.html')
     fo = open(index, 'w')
     fo.write(html_header)
@@ -669,6 +676,41 @@ def get_valid_new_runs():
         new_runs.append(run)
     return new_runs
             
+
+def get_valid_pub_board_runs():
+    board_runs = []
+    procenv = source_bash(env_file)
+    pubdir = procenv['TARGETDIRECTORY']
+
+    #dirs = [x[0] for x in os.walk(pubdir)]
+    for x in os.walk(pubdir):
+        dir = x[0] 
+        board_run = dir.split('/')[-1]
+
+        run = board_run.split('_')[-1]
+        if not run.isdigit():
+            continue
+
+        #print board_run
+        board_runs.append(board_run)
+
+        # if len(dirs) != 0: 
+        #     continue # bypass single files in the dir  
+
+        # run = root.split('/')[-1]
+
+        # if not run.isdigit():
+        #     continue
+        
+        # if int(run) < begin_valid_run or int(run) > end_valid_run:
+        #     continue
+        # runs.append(run)
+
+    board_runs.sort()
+
+    return board_runs
+
+
 
 def get_runs_from_ls(output):
     runs = []
