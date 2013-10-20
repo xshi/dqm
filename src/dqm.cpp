@@ -29,6 +29,7 @@ int main(int argc, char** argv) {
   string data_dir;
   void setTDRStyle(); 
   RootWContent* procCluster(string base_name, int id, TFile *f, bool verbose=false); 
+  RootWContent* procConvert(string base_name, int id, TFile *f, bool verbose=false); 
   RootWContent* procOnTrackCluster(string base_name, int id, TFile *f, bool verbose=false); 
   RootWContent* procTracking(string base_name, int id, TFile *f, bool verbose=false); 
   RootWContent* procEfficiency(string base_name, TFile *f, bool verbose=false); 
@@ -56,9 +57,10 @@ int main(int argc, char** argv) {
   // Get the root files 
   // ---------------------------------------------------------
   
+  TString convert_file = data_dir + "/" + run_number + "-convert.root";
   TString clusters_file = data_dir + "/" + run_number + "-clustering.root";
 
-  cout << "cluster file: " << clusters_file << endl; 
+  // cout << "cluster file: " << clusters_file << endl; 
   // TString tracks_file = data_dir + "/" + run_number + "-tracks.root";
   TString tracks_noalign_file = data_dir + "/" + run_number + "-tracks_noalign.root";
   
@@ -129,6 +131,8 @@ int main(int argc, char** argv) {
 #endif
     
 
+
+
   // ---------------------------------------------------------
   // 1. Making Clusters w/o tracks page 
   // ---------------------------------------------------------
@@ -159,6 +163,44 @@ int main(int argc, char** argv) {
     } 
 	
   // f->Close();
+
+  // ---------------------------------------------------------
+  // 1A. Making DCOL from the convert file
+  // ---------------------------------------------------------
+  RootWPage* myPage_convert = NULL; 
+  
+  TFile *f_convert;
+  bool f_convert_exists = boost::filesystem::exists( convert_file.Data() ); 
+  if ( f_convert_exists ) {
+       f_convert = TFile::Open(convert_file);
+
+  string page_name_convert = "convert"; 
+  myPage_convert = new RootWPage(page_name_convert); 
+  myPage_convert->setAddress("convert.html");
+
+  // RootWContent* myContent; 
+
+  cout << "Processing: " << page_name_convert << " ... \n" << flush;        
+
+  //TFile *f = new TFile(clusters_file);
+  base_name = "MyEUTelConvertCMSPixel/detector_"; 
+  // char* dir_name;
+  // string id_str; 
+  // const int max_number_of_detectors = 20; 
+  
+  for (int n=0; n<max_number_of_detectors; n++) {
+      id_str = get_id_str(n); 
+      dir_name = get_dir_name(base_name, id_str);
+
+      TDirectory *dir = f_convert->GetDirectory(dir_name);
+      if (dir) {
+	myContent = procConvert(base_name, n, f_convert);
+	myPage_convert->addContent(myContent);
+      }
+    } 
+	
+  }
+
 
   // ---------------------------------------------------------
   // 2. Making on-tracks clusters page  
@@ -303,6 +345,8 @@ int main(int argc, char** argv) {
 
   mySite->addPage(myPage);
  
+  if ( myPage_convert != NULL)
+    mySite->addPage(myPage_convert);
   if ( myPage2 != NULL)   
     mySite->addPage(myPage2);
   if ( myPage3 != NULL)
@@ -542,6 +586,51 @@ RootWContent* procCluster(string base_name, int id, TFile *f, bool verbose=false
   return myContent; 
 }
 
+
+RootWContent* procConvert(string base_name, int id, TFile *f, bool verbose=false) {
+
+  string id_str; 
+  stringstream convert; 
+  char* get_hname(string a, string b, string id_str, string suffix=""); 
+  
+  int ww = 850; 
+  int wh = 600; 
+  
+  convert << id;
+  id_str = convert.str(); 
+
+  //   RootWContent* myContent = new RootWContent("Detector 0");
+  string content_name = "detector " + id_str;  
+
+  if (verbose) cout << content_name << " ..." << flush;
+  RootWContent* myContent = new RootWContent(content_name); 
+  
+  TCanvas* myCanvas = new TCanvas(); 
+  
+  char* h_name; 
+  // ---------------------------------------------------------
+  // DCOL plot 
+  // ---------------------------------------------------------
+  h_name = get_hname(base_name, "/dcolMonitorEvt_d", id_str);
+
+  TH2D *colTime; 
+      
+  colTime = (TH2D*)f->Get(h_name);
+
+  if (colTime) {
+    colTime->GetYaxis()->SetTitle("Col");
+    colTime->GetXaxis()->SetTitle("Events");
+    colTime->GetZaxis()->SetLabelSize(0.02);
+      
+    myCanvas->cd();
+    colTime->Draw("colz");
+    RootWImage* colTime_img = new RootWImage(myCanvas, ww, wh); 
+    myContent->addItem(colTime_img);
+
+    if (verbose) cout << " OK." << endl; 
+  }
+  return myContent; 
+}
 
 void setTDRStyle() {
 
