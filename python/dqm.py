@@ -79,7 +79,7 @@ SYNOPSIS
            run the default procedure (eut_dqm, chk_dat, pub_dqm)
 
     dqm.py 30301
-           only for run 20301
+           only for run 30301
 
     dqm.py 30301-30350
            run the range between 30301-30350
@@ -110,20 +110,27 @@ def default(arg=None):
     if len(runs) == 1: 
         force = True 
 
+
     for run in runs:
-        cp_dat(run)
-        board = eut_dqm(run, force=force)
-        chk_dat(board, run, force=force)
-        pub_dqm(board, run, force=force)
-        rm_dat(run)       
+        datfile = get_datfile(run)
+        if not datfile:
+            sys.stdout.write('No dat file for run %s.\n' %run) 
+            continue 
 
-        index(arg)
+        for dat in datfile: 
+            board = get_board(dat) 
+            cp_dat(run, board, dat, force=force)
+            eut_dqm(run, board, dat, force=force)
+            #chk_dat(run, board, force=force)
+            pub_dqm(run, board, force=force)
+            rm_dat(run, board, dat)       
+
+            index(arg)
 
 
-def update_db():
+def update_db(arg=None):
     cmd = '%s ls %s' % (eos, daqdir)
     output = proc_cmd(cmd)
-    
     runs = get_runs_from_ls(output)
 
     dbfile = check_and_join(dbpath, dbname)    
@@ -134,38 +141,33 @@ def update_db():
     check_update_status(dbfile)
 
 
-def cp_dat(run):
-    dstdir = get_rundir(run) 
+def cp_dat(run, board, dat, force=False):
+    dstdir = get_rundir(run, board) 
+    if os.path.exists(dstdir) and not force: 
+        sys.stdout.write('Skip copy %s_%s.\n' %( run, board))
+        return 
 
     cmd = "mkdir -p %s" % dstdir 
     proc_cmd(cmd)
-    datfile = get_datfile(run)
-
-    for df in datfile:
-        cmd = '%s cp %s/%s/%s %s/' %(eos, daqdir, run, df, dstdir)
-        output = proc_cmd(cmd)
-        if debug:
-            print cmd 
-            print output 
-
-
-def rm_dat(run):
-    #filedir = os.path.join(datadir, run)
-    filedir = get_rundir(run)
-
-    cwd = os.getcwd()
-    os.chdir(filedir)
-    for root, dirs, files in os.walk(filedir):
-        for f in files:
-            if '.dat' in f:
-                datfile = f
-                os.remove(datfile)
-    os.chdir(cwd)
+    srcfile = os.path.join(daqdir, str(run), dat)
+    
+    cmd = '%s cp %s %s/' %(eos, srcfile, dstdir)
+    output = proc_cmd(cmd)
+    if debug:
+        print cmd 
+        print output 
 
 
-def eut_dqm(run, force=False):
-    if force and ( run_contains_file(run, '.begin_eut_ful') or 
-                   run_contains_file(run, '.end_eut_ful') ) :
+def rm_dat(run, board, dat):
+    fdir = get_rundir(run, board) 
+    datfile = os.path.join(fdir, dat)
+    if os.path.exists(datfile):
+        os.remove(datfile)    
+
+
+def eut_dqm(run, board, dat, force=False):
+    if force and ( run_contains_file(run, board, '.begin_eut_ful') or 
+                   run_contains_file(run, board, '.end_eut_ful') ) :
         
         s = raw_input(' !!! This will cause the eut ful process !!! \n\
         Do you really want to proceed? (yes or no) ')
@@ -178,13 +180,13 @@ def eut_dqm(run, force=False):
             % MAX_MARLIN_JOBS)
         return
 
-    if not force and run_contains_file(run, '.begin_eut_dqm'):
+    if not force and run_contains_file(run, board, '.begin_eut_dqm'):
         return
         
-    if not force and run_contains_file(run, '.end_eut_dqm'):
+    if not force and run_contains_file(run, board, '.end_eut_dqm'):
         return
 
-    if not force and run_contains_file(run, '.end_eut_ful'):
+    if not force and run_contains_file(run, board, '.end_eut_ful'):
         return
  
 
@@ -194,25 +196,25 @@ def eut_dqm(run, force=False):
 
     modes = ["convert", "clustering", "hitmaker"]        
 
-    run = str(run).zfill(6) 
-    datfile = check_raw_file(procdir, run)
-    touch_file(run, '.begin_eut_dqm')
+    #run = str(run).zfill(6) 
+    check_raw_file(procdir, run, board, dat)
 
-    board = datfile.split('_')[0]
+    touch_file(run, board, '.begin_eut_dqm')
 
     for mode in modes:
         sys.stdout.write('[eut_dqm] %s run %s ... ' %  (mode, run))
         sys.stdout.flush()
         
         cmd = 'jobsub -c dqm.cfg %s %s ' % (mode, run)
+
         output = proc_cmd(cmd, procdir=procdir, env=procenv)
         if debug:
             print output 
 
-        copy_histos(board, run)
+        copy_histos(run, board)
         sys.stdout.write('OK.\n')
 
-    touch_file(run, '.end_eut_dqm')
+    touch_file(run, board, '.end_eut_dqm')
     return board
 
 
@@ -225,7 +227,7 @@ def eut_cluster(args):
     modes = ['clustering']
 
     check_raw_file(procdir, run)
-    touch_file(run, '.begin_eut_cluster')
+    touch_file(run, board, '.begin_eut_cluster')
 
     for mode in modes:
         sys.stdout.write('[eut_dqm] %s run %s ... ' %  (mode, run))
@@ -237,7 +239,7 @@ def eut_cluster(args):
             print output 
         sys.stdout.write('OK.\n')
 
-    touch_file(run, '.end_eut_cluster')
+    touch_file(run, board, '.end_eut_cluster')
 
 
 def eut_track(args):
@@ -249,7 +251,7 @@ def eut_track(args):
     modes = ['prealign', 'tracks_noalign']
 
     check_raw_file(procdir, run)
-    touch_file(run, '.begin_eut_track')
+    touch_file(run, board, '.begin_eut_track')
 
     for mode in modes:
         sys.stdout.write('[eut_dqm] %s run %s ... ' %  (mode, run))
@@ -261,17 +263,17 @@ def eut_track(args):
             print output 
         sys.stdout.write('OK.\n')
 
-    touch_file(run, '.end_eut_track')
+    touch_file(run, board, '.end_eut_track')
 
 
-def chk_dat(board, run, force=False): 
+def chk_dat(run, board, force=False): 
     decoder = Decoder()
     decoder.setNumROCs(8)
 
-    run = str(run).zfill(6) 
+    #run = str(run).zfill(6) 
 
-    if not force and ( run_contains_file(run, '.begin_chk_dat') or 
-                       run_contains_file(run, '.end_chk_dat') ):
+    if not force and ( run_contains_file(run, board, '.begin_chk_dat') or 
+                       run_contains_file(run, board, '.end_chk_dat') ):
         return
 
     #if run_contains_file_pattern(run, 'TestBoard2'): 
@@ -282,14 +284,14 @@ def chk_dat(board, run, force=False):
     sys.stdout.write('[chk_dat] run %s ... ' % run)
     sys.stdout.flush()
 
-    filename = os.path.join(datadir, run, 'mtb.bin')
-
-    outfile = os.path.join(histdir, board, run, 'chk_dat.txt')
+    filename = os.path.join(datadir, str(run).zfill(6), 'mtb.bin')
+    
+    outfile = os.path.join(histdir, str(run).zfill(6), board, 'chk_dat.txt')
     orig_stdout = sys.stdout
     f = file(outfile, 'w')
     sys.stdout = f
         
-    touch_file(run, '.begin_chk_dat')
+    touch_file(run, board, '.begin_chk_dat')
     try:
         decoder.checkDataIntegrity(filename, 1, 5000)
     except IOError:
@@ -297,16 +299,14 @@ def chk_dat(board, run, force=False):
     sys.stdout = orig_stdout
     f.close()
     sys.stdout.write(' OK.\n')
-    touch_file(run, '.end_chk_dat')
+    touch_file(run, board, '.end_chk_dat')
 
 
-def pub_dqm(board, run, force=False):
-
-    run = str(run).zfill(6) 
-    if not force and ( run_contains_file(run, '.begin_pub_dqm') or
-                       run_contains_file(run, '.end_pub_dqm') or 
-                       not run_contains_file(run, '.end_eut_dqm') or
-                       not run_contains_file(run, '.end_chk_dat')
+def pub_dqm(run, board, force=False):
+    if not force and ( run_contains_file(run, board, '.begin_pub_dqm') or
+                       run_contains_file(run, board, '.end_pub_dqm') or 
+                       not run_contains_file(run, board, '.end_eut_dqm') or
+                       not run_contains_file(run, board, '.end_chk_dat')
                    ):
         return
     sys.stdout.write('[pub_dqm] run %s ... ' % run)
@@ -314,16 +314,13 @@ def pub_dqm(board, run, force=False):
 
     #env_file = get_env_file(run)
     procenv = source_bash(env_file)
-    #procdir = os.path.join(procenv['simplesub'], 'CMSPixel')
-    #procdir = '/afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/data/'
 
-    cmd = 'dqm %s/%s' %(board, run)
+    cmd = 'dqm %s/%s' %(str(run).zfill(6), board)
 
-    touch_file(run, '.begin_pub_dqm')
-
+    touch_file(run, board, '.begin_pub_dqm')
     output = proc_cmd(cmd, procdir=histdir, env=procenv)
     sys.stdout.write(' OK.\n')
-    touch_file(run, '.end_pub_dqm')
+    touch_file(run, board, '.end_pub_dqm')
 
 
 def status(args):
@@ -341,14 +338,14 @@ def status(args):
     for run in runs:
         status = ''
         for tag in tags: 
-            if ( run_contains_file(run, '.begin_%s' %tag) and 
-                 not run_contains_file(run, '.end_%s' %tag) ):
+            if ( run_contains_file(run, board, '.begin_%s' %tag) and 
+                 not run_contains_file(run, board, '.end_%s' %tag) ):
                 status += ' %s (...) ' % tag
-            elif ( run_contains_file(run, '.begin_%s' %tag) and 
-                 run_contains_file(run, '.end_%s' %tag)) :
+            elif ( run_contains_file(run, board, '.begin_%s' %tag) and 
+                 run_contains_file(run, board, '.end_%s' %tag)) :
                 status += ' %s ' % tag 
-            elif ( not run_contains_file(run, '.begin_%s' %tag) and 
-                 run_contains_file(run, '.end_%s' %tag) ):
+            elif ( not run_contains_file(run, board, '.begin_%s' %tag) and 
+                 run_contains_file(run, board, '.end_%s' %tag) ):
                 status += ' %s (!?) ' % tag 
             else:
                 status += '       '
@@ -374,31 +371,27 @@ def index(arg):
     procenv = source_bash(env_file)
     targetdir = procenv['TARGETDIRECTORY']
     
-    #runs = get_valid_runs()
-    board_runs = get_valid_pub_board_runs()
+    runs = get_valid_pub_runs()
 
     tags = ['eut_dqm', 'chk_dat', 'eut_ful', 'chk_data_integrity']
 
     run_status = { } 
-    for board_run in board_runs:
-        board = board_run.split('_')[0]
-        run = board_run.split('_')[1]
-        
-        #print board, run
-
-        run_status[board_run] = {} 
+    for r in runs:
+        run = r.split('_')[0]
+        board = r.split('_')[1]        
+        run_status[r] = {} 
         for tag in tags: 
-            if ( run_contains_file(run, '.begin_%s' %tag) and 
-                 not run_contains_file(run, '.end_%s' %tag) ):
-                run_status[board_run][tag] = 'started'
-            elif ( run_contains_file(run, '.begin_%s' %tag) and 
-                 run_contains_file(run, '.end_%s' %tag)) :
-                run_status[board_run][tag] = 'done'
-            elif ( not run_contains_file(run, '.begin_%s' %tag) and 
-                 run_contains_file(run, '.end_%s' %tag) ):
-                run_status[board_run][tag] = 'error'
+            if ( run_contains_file(run, board, '.begin_%s' %tag) and 
+                 not run_contains_file(run, board, '.end_%s' %tag) ):
+                run_status[r][tag] = 'started'
+            elif ( run_contains_file(run, board, '.begin_%s' %tag) and 
+                 run_contains_file(run, board, '.end_%s' %tag)) :
+                run_status[r][tag] = 'done'
+            elif ( not run_contains_file(run, board, '.begin_%s' %tag) and 
+                 run_contains_file(run, board, '.end_%s' %tag) ):
+                run_status[r][tag] = 'error'
             else:
-                run_status[board_run][tag] = 'unknown'
+                run_status[r][tag] = 'unknown'
 
     status_colors = {
         'started': 'aqua',
@@ -452,6 +445,7 @@ def index(arg):
 
 
     index = os.path.join(targetdir, 'index.html')
+    #index = os.path.join(targetdir, 'index2.html')
     fo = open(index, 'w')
     fo.write(html_header)
     fo.write(htmlcode)
@@ -521,7 +515,7 @@ def batch_touch(arg):
     for run in new_runs:
         sys.stdout.write('[touch file] run %s, %s ... ' % (run, fname))
         sys.stdout.flush()
-        touch_file(run, fname)
+        touch_file(run, board, fname)
         sys.stdout.write(' OK.\n')        
 
 
@@ -633,7 +627,9 @@ def get_valid_runs():
         if not run.isdigit():
             continue
         
-        if int(run) < begin_valid_run or int(run) > end_valid_run:
+        run = int(run)
+            
+        if run < begin_valid_run or run > end_valid_run:
             continue
         runs.append(run)
 
@@ -644,71 +640,36 @@ def get_valid_runs():
 def get_valid_new_runs():
     dbfile = check_and_join(dbpath, dbname)
     db = open(dbfile)
-    runs = json.load(db)
+    remote_runs = json.load(db)
     db.close()
-
-    local_runs = get_valid_runs()
-    #remote_runs = runs.keys()
-    remote_runs = runs 
-
     remote_runs.sort()
 
-    runs = []
+    local_runs = get_valid_runs()
+
+    new_runs = []
     for run in remote_runs:
         if run not in local_runs:
-            runs.append(run)
+            new_runs.append(run)
 
-    #runs = get_valid_runs()
-    new_runs = []
-
-    fnames = [ '.begin_eut_dqm', '.end_eut_dqm', 
-               '.begin_chk_dat', '.end_chk_dat', 
-               '.begin_pub_dqm', '.end_pub_dqm', 
-               '.begin_eut_ful', '.end_eut_ful', 
-               '.begin_pub_ful', '.end_pub_ful', 
-               ]
-
-    for run in runs:
-        for fname in fnames:
-            if run_contains_file(run, fname):
-                continue
-
-        new_runs.append(run)
     return new_runs
             
 
-def get_valid_pub_board_runs():
-    board_runs = []
+def get_valid_pub_runs():
+    runs = []
     procenv = source_bash(env_file)
     pubdir = procenv['TARGETDIRECTORY']
 
-    #dirs = [x[0] for x in os.walk(pubdir)]
-    for x in os.walk(pubdir):
-        dir = x[0] 
-        board_run = dir.split('/')[-1]
+    cmd = 'ls %s' % pubdir 
+    output = proc_cmd(cmd)
 
-        run = board_run.split('_')[-1]
-        if not run.isdigit():
+    for line in output.split():
+        run_num = line.split('_')[0]
+        if not run_num.isdigit():
             continue
 
-        #print board_run
-        board_runs.append(board_run)
+        runs.append(line)
 
-        # if len(dirs) != 0: 
-        #     continue # bypass single files in the dir  
-
-        # run = root.split('/')[-1]
-
-        # if not run.isdigit():
-        #     continue
-        
-        # if int(run) < begin_valid_run or int(run) > end_valid_run:
-        #     continue
-        # runs.append(run)
-
-    board_runs.sort()
-
-    return board_runs
+    return runs
 
 
 
@@ -758,23 +719,11 @@ def is_stable_file(filename):
     return tdelta > min_tdelta
 
 
-def check_raw_file(procdir, run):
-    filedir = os.path.join(procdir, 'data/cmspixel', run)
-    cwd = os.getcwd()
-    os.chdir(filedir)
-    for root, dirs, files in os.walk(filedir):
-        if 'mtb.bin' in files:
-            os.remove('mtb.bin')
+def check_raw_file(procdir, run, board, dat):
+    filedir = os.path.join(procdir, 'data/cmspixel', str(run).zfill(6) )
+    cmd = 'ln -sf %s/%s mtb.bin' % (board, dat) 
+    proc_cmd(cmd, procdir=filedir) 
 
-        for f in files:
-            if '.dat' in f:
-                #filesize = get_filesize(root, f)
-                datfile = f
-                os.symlink(datfile, 'mtb.bin')
-                break
-
-    os.chdir(cwd)
-    return datfile 
 
 
 def get_runs_from_file(filename): 
@@ -838,13 +787,14 @@ def get_range_from_str(val, start=0, stop=None):
     return result
 
 
-def touch_file(run, fname): 
-    f = os.path.join(datadir, run, fname)
+def touch_file(run, board, fname): 
+    rundir = get_rundir(run, board)
+    f = os.path.join(rundir, fname)
     open(f, 'a').close()
     
 
-def run_contains_file(run, f):
-    rundir = get_rundir(run)
+def run_contains_file(run, board, f):
+    rundir = get_rundir(run, board)
     for root, dirs, files in os.walk(rundir):
         if f in files:
             return True
@@ -899,33 +849,47 @@ def get_datfile(run):
     keyword = '.dat'
     for line in output.split():
         if keyword in line:
-            datfile.append(line)
+            f = os.path.join(daqdir, str(run), line)
+            filesize = get_filesize(f) 
+            if filesize > 10: 
+                datfile.append(line)
 
     return datfile
 
 
-def get_rundir(run):
-    rundir = os.path.join(datadir, str(run).zfill(6))
+def get_rundir(run, board):
+    rundir = os.path.join(datadir, str(run).zfill(6), board)
     return rundir
 
-def get_filesize(root, f):
-    print root
-    sys.exit()
-    cmd = '%s ls -l %s/%s' % (eos, root, f)
+
+def get_filesize(f):
+    cmd = '%s ls -l %s' % (eos, f)
     output = proc_cmd(cmd)
-    print output
+    items = output.split()
+    size = items[4]
+    if not size.isdigit(): 
+        sys.stdout.write('WARNING: not able to get file size \n')
+        raise NameError(output)
+    size = int(size)
+    return size 
 
 
-def copy_histos(board, run):
-    subdir = '%s/%s' %(board, run)
-    filepath = os.path.join(histdir, board, run)
+def copy_histos(run, board):
+    dstdir = os.path.join(histdir, str(run).zfill(6), board)
+    if not os.access(dstdir, os.F_OK):
+        os.makedirs(dstdir)
 
-    if not os.access(filepath, os.F_OK):
-        os.makedirs(filepath)
-
-    cmd = 'cp %s/%s-clustering.root %s' %(histdir, run, filepath)
+    cmd = 'cp %s/%s-clustering.root %s' %(histdir, str(run).zfill(6), dstdir)
     proc_cmd(cmd)
         
+
+def get_board(dat): 
+    board = None 
+    name = dat.split('_')[0]
+    if 'PixelTestBoard' in name: 
+        board = name 
+    return board 
+
 
 if __name__ == '__main__':
     main()

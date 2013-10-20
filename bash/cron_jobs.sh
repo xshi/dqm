@@ -1,9 +1,9 @@
 #!/bin/sh
 # Usage: 
-# crontab -e 
-# * * * * * /afs/cern.ch/work/x/xshi/public/dqm/v2/bash/cron_jobs.sh
+# acrontab -e 
+# */5 * * * * /afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/dqm/v3/bash/cron_jobs.sh
 
-/afs/cern.ch/work/x/xshi/public/dqm/v2/python/dqm.py default 
+/afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/dqm/v3/python/dqm.py default 
 
 #/afs/cern.ch/work/x/xshi/public/dqm/v2/python/ful.py
 

@@ -40,18 +40,25 @@ int main(int argc, char** argv) {
   }
   
   else {
-    cout << "usage: " << argv[0] << " data/000003" << endl;    
+    // cout << "usage: " << argv[0] << " data/000003" << endl;    
+    cout << "usage: " << argv[0] << " 030623/PixelTestBoard1" << endl;    
   }
   
   size_t idx = data_dir.find("/");
-  string data_type = data_dir.substr(0, idx);
-  string run_number = data_dir.substr(idx+1);
+  // string data_type = data_dir.substr(0, idx);
+  // string run_number = data_dir.substr(idx+1);
+
+  string run_number = data_dir.substr(0, idx); 
+  string board_name = data_dir.substr(idx+1);
+
   
   // ---------------------------------------------------------
   // Get the root files 
   // ---------------------------------------------------------
   
   TString clusters_file = data_dir + "/" + run_number + "-clustering.root";
+
+  cout << "cluster file: " << clusters_file << endl; 
   // TString tracks_file = data_dir + "/" + run_number + "-tracks.root";
   TString tracks_noalign_file = data_dir + "/" + run_number + "-tracks_noalign.root";
   
@@ -321,7 +328,8 @@ int main(int argc, char** argv) {
     }
   }
 
-  targetDirectory += "/" + data_type + "_" + run_number;
+  // targetDirectory += "/" + data_type + "_" + run_number;
+  targetDirectory += "/" + run_number + "_" + board_name;
 
   mySite->setTargetDirectory(targetDirectory);
 
