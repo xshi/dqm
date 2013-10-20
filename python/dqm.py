@@ -102,14 +102,11 @@ DATE
 def default(arg=None):
     update_db()
     if arg is None:
+        force = False 
         runs = get_valid_new_runs()
     else:
         runs = get_range_from_str(arg)
-
-    force = False 
-    if len(runs) == 1: 
         force = True 
-
 
     runs = sorted(runs, reverse=True)
     for run in runs:
