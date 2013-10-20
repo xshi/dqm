@@ -39,7 +39,7 @@ if dataset == 'FNAL2013':
     env_file = '/afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/dqm/v3/setup.sh' 
     daqdir = '/eos/cms/store/cmst3/group/tracktb/FNAL2013'
     eos="/afs/cern.ch/project/eos/installation/0.2.31/bin/eos.select"
-    begin_valid_run = 30001
+    begin_valid_run = 32100
     end_valid_run = 50001 
 
     datadir = '/afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/data/FNAL2013/'
