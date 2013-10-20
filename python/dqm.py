@@ -30,8 +30,8 @@ except ImportError:
 from Decoder_dqm import Decoder 
 
 dataset = 'FNAL2013'
-#debug = False 
-debug = True 
+debug = False 
+#debug = True 
 
 MAX_MARLIN_JOBS = 3
 
@@ -39,7 +39,7 @@ if dataset == 'FNAL2013':
     env_file = '/afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/dqm/v3/setup.sh' 
     daqdir = '/eos/cms/store/cmst3/group/tracktb/FNAL2013'
     eos="/afs/cern.ch/project/eos/installation/0.2.31/bin/eos.select"
-    begin_valid_run = 32100
+    begin_valid_run = 32300
     end_valid_run = 50001 
 
     datadir = '/afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/data/FNAL2013/'
@@ -111,6 +111,7 @@ def default(arg=None):
         force = True 
 
 
+    runs = sorted(runs, reverse=True)
     for run in runs:
         datfile = get_datfile(run)
         if not datfile:
@@ -305,8 +306,8 @@ def chk_dat(run, board, force=False):
 def pub_dqm(run, board, force=False):
     if not force and ( run_contains_file(run, board, '.begin_pub_dqm') or
                        run_contains_file(run, board, '.end_pub_dqm') or 
-                       not run_contains_file(run, board, '.end_eut_dqm') or
-                       not run_contains_file(run, board, '.end_chk_dat')
+                       not run_contains_file(run, board, '.end_eut_dqm') # or
+                       # not run_contains_file(run, board, '.end_chk_dat')
                    ):
         return
     sys.stdout.write('[pub_dqm] run %s ... ' % run)
@@ -372,7 +373,7 @@ def index(arg):
     targetdir = procenv['TARGETDIRECTORY']
     
     runs = get_valid_pub_runs()
-
+    runs = sorted(runs, reverse=True)
     tags = ['eut_dqm', 'chk_dat', 'eut_ful', 'chk_data_integrity']
 
     run_status = { } 
@@ -441,8 +442,6 @@ def index(arg):
     </body>
     </html>''' %  time.strftime("%Y-%m-%d %H:%M:%S GMT", time.gmtime())
     
-
-
 
     index = os.path.join(targetdir, 'index.html')
     #index = os.path.join(targetdir, 'index2.html')
