@@ -30,6 +30,8 @@ int main(int argc, char** argv) {
   void setTDRStyle(); 
   RootWContent* procCluster(string base_name, int id, TFile *f, bool verbose=false); 
   RootWContent* procConvert(string base_name, int id, TFile *f, bool verbose=false); 
+  RootWContent* getTriggerPhase(string h_name_str, TFile *f, bool verbose=false);
+
   RootWContent* procOnTrackCluster(string base_name, int id, TFile *f, bool verbose=false); 
   RootWContent* procTracking(string base_name, int id, TFile *f, bool verbose=false); 
   RootWContent* procEfficiency(string base_name, TFile *f, bool verbose=false); 
@@ -181,6 +183,12 @@ int main(int argc, char** argv) {
   // RootWContent* myContent; 
 
   cout << "Processing: " << page_name_convert << " ... \n" << flush;        
+
+  // Get the triggerPhase plot
+
+  base_name = "MyEUTelConvertCMSPixel/triggerPhase"; 
+  myContent = getTriggerPhase(base_name, f_convert);
+  myPage_convert->addContent(myContent); 
 
   //TFile *f = new TFile(clusters_file);
   base_name = "MyEUTelConvertCMSPixel/detector_"; 
@@ -624,6 +632,48 @@ RootWContent* procConvert(string base_name, int id, TFile *f, bool verbose=false
       
     myCanvas->cd();
     colTime->Draw("colz");
+    RootWImage* colTime_img = new RootWImage(myCanvas, ww, wh); 
+    myContent->addItem(colTime_img);
+
+    if (verbose) cout << " OK." << endl; 
+  }
+  return myContent; 
+}
+
+
+RootWContent* getTriggerPhase(string h_name_str, TFile *f, bool verbose=false) {
+  stringstream convert; 
+  string content_name = "TriggerPhase "; 
+    
+  int ww = 850; 
+  int wh = 600; 
+  
+  if (verbose) cout << content_name << " ..." << flush;
+  RootWContent* myContent = new RootWContent(content_name); 
+  
+  TCanvas* myCanvas = new TCanvas(); 
+  
+  // char* h_name;
+  char *h_name = new char[h_name_str.size()+1]; 
+  h_name[h_name_str.size()]=0;
+  memcpy(h_name,h_name_str.c_str(),h_name_str.size());
+  
+  // ---------------------------------------------------------
+  // Trigger Phase plot 
+  // ---------------------------------------------------------
+  // h_name = get_hname(base_name, "/dcolMonitorEvt_d", id_str);
+
+  TH1D *colTime; 
+      
+  colTime = (TH1D*)f->Get(h_name);
+
+  if (colTime) {
+    // colTime->GetYaxis()->SetTitle("Col");
+    // colTime->GetXaxis()->SetTitle("Events");
+    // colTime->GetZaxis()->SetLabelSize(0.02);
+      
+    myCanvas->cd();
+    colTime->Draw(); // "colz");
     RootWImage* colTime_img = new RootWImage(myCanvas, ww, wh); 
     myContent->addItem(colTime_img);
 
