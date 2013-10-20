@@ -320,6 +320,7 @@ def pub_dqm(run, board, force=False):
 
     touch_file(run, board, '.begin_pub_dqm')
     output = proc_cmd(cmd, procdir=histdir, env=procenv)
+    print output 
     sys.stdout.write(' OK.\n')
     touch_file(run, board, '.end_pub_dqm')
 
@@ -878,8 +879,9 @@ def copy_histos(run, board):
     if not os.access(dstdir, os.F_OK):
         os.makedirs(dstdir)
 
-    cmd = 'cp %s/%s-clustering.root %s' %(histdir, str(run).zfill(6), dstdir)
-    proc_cmd(cmd)
+    for name in ['convert', 'clustering']:
+        cmd = 'cp %s/%s-%s.root %s' %(histdir, str(run).zfill(6), name, dstdir)
+        proc_cmd(cmd)
         
 
 def get_board(dat): 
