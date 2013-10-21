@@ -210,11 +210,11 @@ def eut_dqm(run, board, dat, force=False):
         if debug:
             print output 
 
-        mv_root_files(run, board)
-        rm_slcio_files(run, board)
+
         sys.stdout.write('OK.\n')
 
     touch_file(run, board, '.end_eut_dqm')
+    mv_root_files(run, board)
     return board
 
 
@@ -321,6 +321,7 @@ def pub_dqm(run, board, force=False):
     output = proc_cmd(cmd, procdir=histdir, env=procenv)
     print output 
     sys.stdout.write(' OK.\n')
+    rm_slcio_files(run, board)
     touch_file(run, board, '.end_pub_dqm')
 
 
