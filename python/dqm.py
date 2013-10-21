@@ -46,6 +46,7 @@ if dataset == 'FNAL2013':
     dbname = 'run_list.db'
     dbpath = datadir 
     histdir = '/afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/jobsub/v1/histograms'
+    lciodir = '/afs/cern.ch/cms/Tracker/Pixel/HRbeamtest/jobsub/v1/lcio'
 
 else:
     raise NameError(dataset)
@@ -209,7 +210,8 @@ def eut_dqm(run, board, dat, force=False):
         if debug:
             print output 
 
-        copy_histos(run, board)
+        mv_root_files(run, board)
+        rm_slcio_files(run, board)
         sys.stdout.write('OK.\n')
 
     touch_file(run, board, '.end_eut_dqm')
@@ -871,15 +873,20 @@ def get_filesize(f):
     return size 
 
 
-def copy_histos(run, board):
+def mv_root_files(run, board):
     dstdir = os.path.join(histdir, str(run).zfill(6), board)
     if not os.access(dstdir, os.F_OK):
         os.makedirs(dstdir)
 
-    for name in ['convert', 'clustering']:
-        cmd = 'cp %s/%s-%s.root %s' %(histdir, str(run).zfill(6), name, dstdir)
+    for name in ['convert', 'clustering', 'hitmaker']:
+        cmd = 'mv %s/%s-%s.root %s' %(histdir, str(run).zfill(6), name, dstdir)
         proc_cmd(cmd)
-        
+ 
+def rm_slcio_files(run, board):
+    for name in ['convert', 'clustering', 'hitmaker']:
+        cmd = 'rm %s/%s-%s.slcio' %(lciodir, str(run).zfill(6), name)
+        proc_cmd(cmd)
+    
 
 def get_board(dat): 
     board = None 
